@@ -13,7 +13,6 @@ export class State<DATA> {
 
     set(newData: DATA): void {
         this.data = newData;
-        debugger
 
         this.changeListeners.forEach(listener => listener(newData));
     }

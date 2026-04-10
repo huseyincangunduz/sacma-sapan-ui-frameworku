@@ -1,7 +1,5 @@
-import { NeolitComponent } from "./component";
+import { NeolitChild, NeolitComponent } from "@ubs-platform/neolit/core";
 
-export type NeolitNode = HTMLElement | Text;
-export type NeolitChild = NeolitNode | string | number | null | undefined;
 
 type ComponentConstructor = new () => NeolitComponent;
 type Tag = string | ComponentConstructor;

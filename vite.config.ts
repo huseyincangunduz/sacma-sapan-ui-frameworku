@@ -4,9 +4,9 @@ import path from "path";
 export default defineConfig({
     resolve: {
         alias: {
-            "@ubs-platform/neolith": path.resolve(__dirname, "src/package/core"),
-            "@ubs-platform/neolith/jsx-runtime": path.resolve(__dirname, "src/package/core/jsx-runtime"),
-            "@ubs-platform/neolith/jsx-dev-runtime": path.resolve(__dirname, "src/package/core/jsx-dev-runtime"),
+            "@ubs-platform/neolit/core": path.resolve(__dirname, "src/package/core/index.ts"),
+            "@ubs-platform/neolit/jsx-runtime": path.resolve(__dirname, "src/package/jsx/jsx-runtime.ts"),
+            "@ubs-platform/neolit/jsx-dev-runtime": path.resolve(__dirname, "src/package/jsx/jsx-dev-runtime.ts"),
         },
     },
 });

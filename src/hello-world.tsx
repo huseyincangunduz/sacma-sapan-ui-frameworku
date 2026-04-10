@@ -1,4 +1,4 @@
-import { NeolitComponent, State } from "@ubs-platform/neolith";
+import { NeolitComponent, State } from "@ubs-platform/neolit/core";
 
 export class SecondaryComponent extends NeolitComponent {
     render(): HTMLElement {

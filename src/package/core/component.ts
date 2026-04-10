@@ -1,5 +1,6 @@
+import { NeolitNode } from "./neolit-node";
 import { State } from "./state";
-import { NeolitNode } from "./jsx-runtime";
+
 
 export abstract class NeolitComponent {
     private _mountTarget: HTMLElement | null = null;
@@ -9,7 +10,7 @@ export abstract class NeolitComponent {
         console.log("NeolitComponent created");
     }
 
-    abstract render(): HTMLElement;
+    abstract render(): NeolitNode;
 
     watch<T>(state: State<T>): void {
         state.subscribe(() => this._rerender());

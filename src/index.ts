@@ -1,7 +1,7 @@
-import * as Neolit from "@ubs-platform/neolith"; 
 import { HelloWorld } from "./hello-world";
+import { jsx } from "@ubs-platform/neolit/jsx-runtime";
 
-const element = Neolit.jsx(HelloWorld, {});
+const element = jsx(HelloWorld, {});
 
 document.addEventListener("DOMContentLoaded", () => {
     const root = document.getElementById("root");
