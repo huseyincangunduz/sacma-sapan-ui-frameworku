@@ -1,5 +1,6 @@
 import { NeolitComponent, State } from "@ubs-platform/neolit/core";
 import { Zikirmatik } from "./zikirmatik";
+import { KyleBroflovski } from "./kyle";
 
 export class SecondaryComponent extends NeolitComponent {
     render(): HTMLElement {
@@ -26,10 +27,13 @@ export class HelloWorld extends NeolitComponent {
     render(): HTMLElement {
         return <div>
 
-            <h1 >Hello, {this.name.get()}!</h1>
+            <h1 >Merhaba, {this.name}!</h1>
+            <div>Monolit demosuna hoş geldin</div>
             <button onclick={() => this.changeNamePrompt()}>Change name</button>
+            <h3>Çeşitli saçma sapan şeyleri buradan deneyebilirsiniz.</h3>
             <SecondaryComponent />
             <Zikirmatik />
+            <KyleBroflovski></KyleBroflovski>
         </div>;
     }
 }

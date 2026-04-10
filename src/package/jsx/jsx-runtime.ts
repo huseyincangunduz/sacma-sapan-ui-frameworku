@@ -35,7 +35,10 @@ function appendJsxChild(parent: HTMLElement, child: JsxChild): void {
         child.componentInstance.mount(parent, child.element);
         return;
     }
-
+    if (Array.isArray(child)) {
+        child.forEach(c => appendJsxChild(parent, c));
+        return;
+    }
     parent.appendChild(normalizeChild(child));
 }
 
