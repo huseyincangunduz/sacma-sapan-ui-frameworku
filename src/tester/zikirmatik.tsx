@@ -7,7 +7,6 @@ export class Zikirmatik extends NeolitComponent {
      */
     constructor() {
         super();
-        this.watchToRerender(this.count);
     }
 
     increment() {
