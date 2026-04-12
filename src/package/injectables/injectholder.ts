@@ -134,10 +134,14 @@ export class InjectHolder {
 
     private readStaticInjectTokens<T>(targetClass: Constructable<T>): InjectionToken[] {
         const injectTokens = (targetClass as any).inject;
-        if (!Array.isArray(injectTokens)) {
+        const decoratorInjectTokens = (targetClass as any).__injectTokens__;
+        const tokens = Array.isArray(injectTokens) ? injectTokens : decoratorInjectTokens;
+
+        if (!Array.isArray(tokens)) {
             return [];
         }
-        return injectTokens;
+
+        return tokens;
     }
 
     private describeToken(token: InjectionToken): string {

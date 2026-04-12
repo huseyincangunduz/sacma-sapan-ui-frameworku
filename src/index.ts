@@ -1,5 +1,35 @@
-import { jsx } from "@ubs-platform/neolit/jsx-runtime";
 import { Introduction } from "./landing/introduction";
+
+import { Injectable, Inject, inject } from "@ubs-platform/neolit/injectables";
+
+const API_URL = Symbol("API_URL");
+
+@Injectable({ providedIn: "root" })
+class Logger {
+  constructor(
+  ) {}
+
+  public info(message: string): void {
+    console.info(`[Logger]: ${message}`);
+  }
+}
+
+
+@Injectable({ providedIn: "root" })
+class ApiService {
+    constructor(
+        private logger: Logger,
+    ) {}
+
+    public fetchData(): void {
+        debugger
+        this.logger.info(`Fetching data from api url...`);
+        // Simulate fetching data...
+    }
+}
+
+// Manually register API_URL value in the root injector
+inject(ApiService).fetchData(); // This will throw an error because API_URL is not registered
 
 
 document.addEventListener("DOMContentLoaded", () => {
