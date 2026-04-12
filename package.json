@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "A lightweight declarative UI framework with fine-grained state updates.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/huseyincangunduz/sacma-sapan-ui-frameworku"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
