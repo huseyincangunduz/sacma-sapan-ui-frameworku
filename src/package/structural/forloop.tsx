@@ -190,15 +190,13 @@ export class For<T> extends NeolitComponent {
     }
 
 
-    render(): NeolitNode {
-        return <>
-            {this.items.get().map((item, index) =>
-                isState(item) ?
-                    <Stateful state={item}>
-                        {() => this.cacheAndResultSelf(getStateValue<T>(item), index)}
-                    </Stateful> :
-                    this.cacheAndResultSelf(getStateValue<T>(item), index)
-            )}
-        </>
+    render(): NeolitNode[] {
+        return this.items.get().map((item, index) =>
+            isState(item) ?
+                <Stateful state={item}>
+                    {() => this.cacheAndResultSelf(getStateValue<T>(item), index)}
+                </Stateful> :
+                this.cacheAndResultSelf(getStateValue<T>(item), index)
+        );
     }
 }

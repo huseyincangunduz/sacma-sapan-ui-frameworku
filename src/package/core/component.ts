@@ -5,7 +5,7 @@ export abstract class NeolitComponent {
     static isNeolitComponent = true;
     static componentInstances = new Map<string, NeolitComponent>();
     private _mountTarget: HTMLElement | null = null;
-    private _currentElement: NeolitNode | null = null;
+    private _currentElement: NeolitNode[] | NeolitNode | null = null;
     private _unsubscribers: Array<() => void> = [];
     private key: string;
 
@@ -15,18 +15,12 @@ export abstract class NeolitComponent {
         console.log("NeolitComponent created");
     }
 
-    abstract render(): NeolitNode;
+    abstract render(): NeolitNode | NeolitNode[];
 
     watchToRerender<T>(state: State<T>): void {
         const listener = () => this._rerender();
         state.subscribe(listener);
         this._unsubscribers.push(() => state.unsubscribe(listener));
-    }
-
-    temporaryDestroy(): void {
-        if (this._mountTarget) {
-            this._mountTarget.removeChild(this._currentElement!);
-        }
     }
 
     destroy(): void {
@@ -40,16 +34,28 @@ export abstract class NeolitComponent {
         NeolitComponent.componentInstances.delete(this.key);
     }
 
-    mount(target: HTMLElement, initialElement?: NeolitNode): NeolitNode {
+    mount(target: HTMLElement, initialElement?: NeolitNode): NeolitNode | NeolitNode[] {
         this._mountTarget = target;
         target.attributes.setNamedItem(document.createAttribute("data-neolit-mounted"));
         target.setAttribute("data-neolit-key", this.key);
 
-        this._currentElement = initialElement ?? this.render();
-
-        if (!target.contains(this._currentElement)) {
-            target.appendChild(this._currentElement);
+        const currentEls = initialElement ?? this.render();
+        
+        if (!Array.isArray(this._currentElement)) {
+            this._currentElement = currentEls;
+            if (!target.contains(this._currentElement as Node)) {
+                target.appendChild(this._currentElement as Node);
+            }
+            return this._currentElement;
         }
+
+        this._currentElement = currentEls;
+        (this._currentElement as NeolitNode[]).forEach(el => {
+            if (!target.contains(el)) {
+                target.appendChild(el);
+            }
+        });
+
 
         return this._currentElement;
     }
@@ -57,7 +63,15 @@ export abstract class NeolitComponent {
     private _rerender(): void {
         if (!this._mountTarget || !this._currentElement) return;
         const newElement = this.render();
-        this._mountTarget.replaceChild(newElement, this._currentElement);
+        if (Array.isArray(this._currentElement)) {
+            (this._currentElement as NeolitNode[]).forEach(el => {
+                if (this._mountTarget!.contains(el)) {
+                    this._mountTarget!.removeChild(el);
+                }
+            });
+        } else {
+            this._mountTarget.replaceChild(newElement as Node, this._currentElement as Node);
+        }
         this._currentElement = newElement;
     }
 
@@ -65,6 +79,6 @@ export abstract class NeolitComponent {
         this._rerender();
     }
 
-    
+
 }
 

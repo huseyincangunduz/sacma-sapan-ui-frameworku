@@ -7,7 +7,7 @@ type Props = Record<string, unknown> | null;
 
 export interface ComponentRenderResult {
     componentInstance: NeolitComponent;
-    element: NeolitNode;
+    element: NeolitNode | NeolitNode[];
 }
 
 type JsxChild = NeolitChild | ComponentRenderResult;
