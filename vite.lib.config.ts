@@ -7,6 +7,7 @@ import path from "path";
  *
  * Entry points:
  *   @ubs-platform/neolit/core          -> src/package/core/index.ts
+ *   @ubs-platform/neolit/injectables   -> src/package/injectables/index.ts
  *   @ubs-platform/neolit/jsx-runtime   -> src/package/jsx/jsx-runtime.ts
  *   @ubs-platform/neolit/jsx-dev-runtime -> src/package/jsx/jsx-dev-runtime.ts
  *   @ubs-platform/neolit/structural    -> src/package/structural/index.ts
@@ -18,6 +19,7 @@ export default defineConfig({
         lib: {
             entry: {
                 core: path.resolve(__dirname, "src/package/core/index.ts"),
+                injectables: path.resolve(__dirname, "src/package/injectables/index.ts"),
                 "jsx-runtime": path.resolve(__dirname, "src/package/jsx/jsx-runtime.ts"),
                 "jsx-dev-runtime": path.resolve(__dirname, "src/package/jsx/jsx-dev-runtime.ts"),
                 structural: path.resolve(__dirname, "src/package/structural/index.ts"),
@@ -32,6 +34,7 @@ export default defineConfig({
     resolve: {
         alias: {
             "@ubs-platform/neolit/core": path.resolve(__dirname, "src/package/core/index.ts"),
+            "@ubs-platform/neolit/injectables": path.resolve(__dirname, "src/package/injectables/index.ts"),
             "@ubs-platform/neolit/jsx-runtime": path.resolve(__dirname, "src/package/jsx/jsx-runtime.ts"),
             "@ubs-platform/neolit/jsx-dev-runtime": path.resolve(__dirname, "src/package/jsx/jsx-dev-runtime.ts"),
         },

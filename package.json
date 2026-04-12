@@ -20,6 +20,11 @@
       "require": "./dist/lib/core.cjs",
       "types": "./dist/lib/types/core/index.d.ts"
     },
+    "./injectables": {
+      "import": "./dist/lib/injectables.js",
+      "require": "./dist/lib/injectables.cjs",
+      "types": "./dist/lib/types/injectables/index.d.ts"
+    },
     "./jsx-runtime": {
       "import": "./dist/lib/jsx-runtime.js",
       "require": "./dist/lib/jsx-runtime.cjs",

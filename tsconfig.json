@@ -12,6 +12,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "experimentalDecorators": true,
     "jsx": "react-jsx",
     "jsxImportSource": "@ubs-platform/neolit",
 
@@ -24,6 +25,7 @@
     "outDir": "./dist",
     "paths": {
       "@ubs-platform/neolit/core": ["./src/package/core"],
+      "@ubs-platform/neolit/injectables": ["./src/package/injectables"],
       "@ubs-platform/neolit/jsx-runtime": ["./src/package/jsx/jsx-runtime.ts"],
       "@ubs-platform/neolit/jsx-dev-runtime": ["./src/package/jsx/jsx-dev-runtime.ts"]
     }
