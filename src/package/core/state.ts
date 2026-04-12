@@ -22,7 +22,7 @@ export class State<DATA> {
         }
     }
 
-    private determineTriggerIsRequired(newData: DATA) {
+    determineTriggerIsRequired(newData: DATA) {
         return (typeof newData === "object" || Array.isArray(newData)) || this.data !== newData;
     }
 
@@ -51,6 +51,38 @@ export class State<DATA> {
         return this.data?.toString() ?? "";
     }
 
+
+}
+
+
+export class ComputedState<DATA> extends State<DATA> {
+
+    private computeFn: () => DATA;
+
+    constructor(statesListened: StateOrPlain<any>[], computeFn: () => DATA) {
+        super(computeFn());
+        this.computeFn = computeFn;
+        for (const stateOrPlain of statesListened) {
+            if (stateOrPlain instanceof State) {
+                stateOrPlain.subscribe(() => this.recompute());
+            }
+        }
+    }
+
+    recompute(): void {
+        const newData = this.computeFn();
+        const triggerFlag = this.determineTriggerIsRequired(newData);
+        (this as any).data = newData;
+
+        if (triggerFlag) {
+            this.changeListeners.forEach(listener => listener(newData));
+        }
+    }
+
+}
+
+export function computed<DATA>(statesListened: StateOrPlain<any>[], computeFn: () => DATA): ComputedState<DATA> {
+    return new ComputedState(statesListened, computeFn);
 }
 
 export function state<DATA>(initialData: DATA): State<DATA> {

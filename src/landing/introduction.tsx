@@ -14,7 +14,7 @@ export class Introduction extends NeolitComponent {
         {
             title: "watchToRerender",
             signature: "this.watchToRerender(count)",
-            summary: "Bir state değiştiğinde bileşeni otomatik tekrar render eder.",
+            summary: "Bir state değiştiğinde bileşeni otomatik tekrar render eder. Ama buna ihtiyacınız olmamasını umuyoruz, çünkü manuel kontrol genellikle daha performanslıdır.",
         },
         {
             title: "Stateful",
@@ -42,7 +42,7 @@ export class Introduction extends NeolitComponent {
         {
             name: "KyleBroflovski",
             source: "test/kyle.tsx",
-            note: "State ile görsel/alt metin güncelleme ve liste üzerinden buton üretimi.",
+            note: "State ile görsel/alt metin güncelleme ve liste üzerinden buton üretimi. Bu arada Kyle'ı çok seviyorum. Kyle candır 💚",
         },
     ]);
 
@@ -69,7 +69,7 @@ export class Introduction extends NeolitComponent {
                     <div className="absolute -bottom-20 -left-12 h-64 w-64 rounded-full bg-orange-200/35 blur-3xl"></div>
 
                     <div className="relative z-10 flex flex-col gap-6">
-                        <img src="/assets/logo.svg" alt="Neolit Logo" className="h-20 w-20" />
+                        <img src="/assets/neolit-full.png" alt="Neolit Logo" />
 
                         <div className="space-y-3">
                             <h1 className="text-4xl font-black tracking-tight sm:text-5xl">Neolit ile modern, yalın ve hızlı UI geliştirme</h1>
@@ -153,12 +153,12 @@ export class Introduction extends NeolitComponent {
                 <section className="rounded-3xl border border-orange-200 bg-orange-50/60 p-6 sm:p-8">
                     <h2 className="text-2xl font-black text-slate-900">Test Klasorunden Ornekler</h2>
                     <p className="mt-2 text-sm leading-6 text-slate-700">
-                        Asagidaki componentler, projenin [test] klasorunde bulunuyor ve Neolit API'lerinin
+                        Asagidaki bu salak salak componentler, projenin [test] klasorunde bulunuyor ve Neolit API'lerinin
                         gercek kullanimlarini gosteriyor.
                     </p>
 
-                    <div >
-                        <For  items={this.sampleComponents}>
+                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                        <For items={this.sampleComponents}>
                             {(item) => <article className="rounded-xl border border-orange-200 bg-white p-4">
                                 <h3 className="font-bold text-slate-900">{item.name}</h3>
                                 <p className="mt-1 font-mono text-xs text-orange-700">{item.source}</p>
@@ -168,6 +168,14 @@ export class Introduction extends NeolitComponent {
                     </div>
                 </section>
             </main>
+            <footer className="mx-auto mt-16 w-full max-w-6xl rounded-3xl border border-slate-200 bg-blue-300 p-8 text-center text-sm text-slate-500 shadow-sm">
+                {/* <div className="flex flex-row align-items-center justify-content-center gap-2 mt-16">
+                    <img src="/assets/tk.svg" alt="TK Logo" height="24px" /> <div>
+                        Gelişimlerinden
+                    </div>
+                </div> */}
+                <p className="mt-10 text-center text-sm text-slate-500">© 2026 Tetakent (H.C.G). Tüm hakları saklıdır.</p>
+            </footer>
         </div>;
     }
 }
