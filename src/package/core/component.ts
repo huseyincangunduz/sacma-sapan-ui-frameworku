@@ -6,9 +6,10 @@ export abstract class NeolitComponent {
     static componentInstances = new Map<string, NeolitComponent>();
     private _mountTarget: HTMLElement | null = null;
     private _currentElement: NeolitNode | null = null;
+    private _unsubscribers: Array<() => void> = [];
     private key: string;
 
-    constructor(properties?: Record<string, any>, key?: string) {
+    constructor(_properties?: Record<string, any>, key?: string) {
         this.key = key ?? Math.random().toString(36).substring(2, 9);
         NeolitComponent.componentInstances.set(this.key, this);
         console.log("NeolitComponent created");
@@ -16,9 +17,10 @@ export abstract class NeolitComponent {
 
     abstract render(): NeolitNode;
 
-    watch<T>(state: State<T>): void {
-        // state güncellendiğinde text node güncellenir. bu yüzden koskoca componentin yeniden render edilmesine gerek yoktur.
-        // state.subscribe(() => this._rerender());
+    watchToRerender<T>(state: State<T>): void {
+        const listener = () => this._rerender();
+        state.subscribe(listener);
+        this._unsubscribers.push(() => state.unsubscribe(listener));
     }
 
     temporaryDestroy(): void {
@@ -28,6 +30,9 @@ export abstract class NeolitComponent {
     }
 
     destroy(): void {
+        this._unsubscribers.forEach(unsubscribe => unsubscribe());
+        this._unsubscribers = [];
+
         if (this._mountTarget) {
             this._mountTarget.removeAttribute("data-neolit-mounted");
             this._mountTarget.removeAttribute("data-neolit-key");
@@ -54,6 +59,10 @@ export abstract class NeolitComponent {
         const newElement = this.render();
         this._mountTarget.replaceChild(newElement, this._currentElement);
         this._currentElement = newElement;
+    }
+
+    public rerender(): void {
+        this._rerender();
     }
 
     

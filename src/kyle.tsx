@@ -11,8 +11,6 @@ export class KyleBroflovski extends NeolitComponent {
     ]
     constructor() {
         super();
-        this.watch(this.imageSrc);
-        this.watch(this.imageAlt);
     }
 
     setAlterEgo({ name, src }: Record<string, string>) {
@@ -22,7 +20,7 @@ export class KyleBroflovski extends NeolitComponent {
 
     render(): NeolitNode {
         return <div>
-            <h2>Kyle Alter Egos</h2>
+            <h2 style={{backgroundColor: "orange", color: "green"}}>Kyle Alter Egos</h2>
             {
                 this.alterEgos.map(a => <button onclick={() => this.setAlterEgo(a)}>{a.name}</button>)
             }

@@ -1,7 +1,7 @@
-import { NeolitChild, NeolitComponent, NeolitNode, State } from "@ubs-platform/neolit/core";
+import { getStateValue, isState, NeolitChild, NeolitComponent, NeolitNode, State, StateOrPlain } from "@ubs-platform/neolit/core";
 
 
-type ComponentConstructor = new () => NeolitComponent;
+type ComponentConstructor = new (props?: Record<string, any>) => NeolitComponent;
 type Tag = string | ComponentConstructor;
 type Props = Record<string, unknown> | null;
 
@@ -11,6 +11,32 @@ export interface ComponentRenderResult {
 }
 
 type JsxChild = NeolitChild | ComponentRenderResult;
+
+function manupileElementByStateOrNot(element: HTMLElement, stateOrPlain: StateOrPlain<any>, callback: (value: any) => void) {
+    if (isState(stateOrPlain)) {
+        const cb = () => callback(getStateValue(stateOrPlain));
+        stateOrPlain.subscribe(cb);
+        callback(getStateValue(stateOrPlain));
+        element.addEventListener("close", () => stateOrPlain.unsubscribe(cb));
+    } else {
+        callback(stateOrPlain);
+    }
+}
+
+function setAttributeWithStateSupport(element: HTMLElement, attributeKey: string, stateOrPlainValue: StateOrPlain<any>): void {
+    manupileElementByStateOrNot(element, stateOrPlainValue, (value) => {
+        element.setAttribute(attributeKey, String(value));
+    });
+}
+
+function setStyleWithStateSupport(element: HTMLElement, styleKey: string, stateOrPlainValue: StateOrPlain<any>): void {
+    manupileElementByStateOrNot(element, stateOrPlainValue, (value) => {
+        Object.assign(element.style, { [styleKey]: value });
+    });
+}
+
+
+
 
 function normalizeChild(child: NeolitChild): Node {
     if (child === null || child === undefined) return document.createTextNode("");
@@ -52,20 +78,28 @@ export function jsx(tag: Tag, props: Props & { children?: JsxChild[] | JsxChild 
     const { children, ...attrs } = props ?? {};
 
     if (typeof tag === "function") {
-        const instance = new tag();
+        const instance = new tag(props);
         return { componentInstance: instance, element: instance.render() };
     }
 
     const el = document.createElement(tag);
 
-    for (const [key, value] of Object.entries(attrs ?? {})) {
-        if (key.startsWith("on") && typeof value === "function") {
-            const eventName = key.slice(2).toLowerCase();
-            el.addEventListener(eventName, value as EventListener);
-        } else {
-            el.setAttribute(key, String(value));
-            if (value instanceof State) {
-                value.subscribe(() => el.setAttribute(key, String(value)));
+    for (const [attributeKey, attributeValue] of Object.entries(attrs ?? {})) {
+        if (attributeKey.startsWith("on") && typeof attributeValue === "function") {
+            const eventName = attributeKey.slice(2).toLowerCase();
+            el.addEventListener(eventName, attributeValue as EventListener);
+        } else if (attributeKey === "style") {
+            if (typeof attributeValue === "object") {
+                for (const [styleKey, styleValue] of Object.entries(attributeValue!)) {
+                    setStyleWithStateSupport(el, styleKey, styleValue);
+                }
+            }
+        }
+        else {
+            if (attributeKey === 'className' || attributeKey === 'klass') {
+                setAttributeWithStateSupport(el, 'class', attributeValue);
+            } else {
+                setAttributeWithStateSupport(el, attributeKey, attributeValue);
             }
         }
     }
