@@ -63,12 +63,20 @@ export abstract class NeolitComponent {
     private _rerender(): void {
         if (!this._mountTarget || !this._currentElement) return;
         const newElement = this.render();
+
         if (Array.isArray(this._currentElement)) {
-            (this._currentElement as NeolitNode[]).forEach(el => {
-                if (this._mountTarget!.contains(el)) {
+            this._currentElement.forEach(el => {
+                if (el.parentNode === this._mountTarget) {
                     this._mountTarget!.removeChild(el);
                 }
             });
+
+            (newElement as NeolitNode[]).forEach(el => {
+                if (!this._mountTarget!.contains(el)) {
+                    this._mountTarget!.appendChild(el);
+                }
+            });
+          
         } else {
             this._mountTarget.replaceChild(newElement as Node, this._currentElement as Node);
         }

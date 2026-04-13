@@ -71,9 +71,11 @@ export class DynamicListDemo extends NeolitComponent {
             <button onclick={() => this.addItem()}>Ekle</button>
             <button onclick={() => this.removeFirst()}>Ilki Sil</button>
             <button onclick={() => this.reverseItems()}>Ters Cevir</button>
-            <For items={this.items}>
-                {(item) => <li>{item}</li>}
-            </For>
+            <ul>
+                <For items={this.items}>
+                    {(item) => <li>{item}</li>}
+                </For>
+            </ul>
 
         </section>;
     }

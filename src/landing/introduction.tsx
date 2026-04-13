@@ -1,5 +1,15 @@
 import { NeolitComponent, State, state } from "@ubs-platform/neolit/core";
 import { For, Stateful } from "@ubs-platform/neolit/structural";
+import { HelloWorld } from "../tester/hello-world";
+import { Zikirmatik } from "../tester/zikirmatik";
+import { KyleBroflovski } from "../tester/kyle";
+
+export interface SampleComponentItem {
+    name: string;
+    source: string;
+    note: string;
+    componentConstructor: () => NeolitComponent;
+}
 
 export class Introduction extends NeolitComponent {
     counter = state(0);
@@ -28,23 +38,28 @@ export class Introduction extends NeolitComponent {
         },
     ]);
 
-    sampleComponents = state([
+    sampleComponents = state<SampleComponentItem[]>([
         {
             name: "HelloWorld",
             source: "test/hello-world.tsx",
             note: "Temel component kompozisyonu, event ve alt bileşen kullanımı.",
+            componentConstructor: () => HelloWorld
         },
         {
             name: "Zikirmatik",
             source: "test/zikirmatik.tsx",
             note: "state + update ile sayaç mantığı.",
+            componentConstructor: () => Zikirmatik
         },
         {
             name: "KyleBroflovski",
             source: "test/kyle.tsx",
             note: "State ile görsel/alt metin güncelleme ve liste üzerinden buton üretimi. Bu arada Kyle'ı çok seviyorum. Kyle candır 💚",
+            componentConstructor: () => KyleBroflovski
         },
     ]);
+
+    activeSampleComponent = state<SampleComponentItem | null>(null);
 
     constructor() {
         super();
@@ -105,7 +120,7 @@ export class Introduction extends NeolitComponent {
                             <Stateful state={this.activeTab}>
                                 {() => {
                                     const tabButtonClass = (tabName: string): string => [
-                                        "rounded-full border px-4 py-2 text-sm font-semibold transition",
+                                        "dont-touch rounded-full border px-4 py-2 text-sm font-semibold transition",
                                         this.activeTab.get() === tabName
                                             ? "border-cyan-500 bg-cyan-500 text-white"
                                             : "border-slate-300 bg-white text-slate-700 hover:border-cyan-300 hover:text-cyan-700",
@@ -163,9 +178,21 @@ export class Introduction extends NeolitComponent {
                                 <h3 className="font-bold text-slate-900">{item.name}</h3>
                                 <p className="mt-1 font-mono text-xs text-orange-700">{item.source}</p>
                                 <p className="mt-2 text-sm text-slate-600">{item.note}</p>
+                                <button onClick={() => this.activeSampleComponent.set(item)}>Componenti dene </button>
                             </article>}
                         </For>
                     </div>
+                    <Stateful state={this.activeSampleComponent}>
+                        {() => {
+                            const activeItem = this.activeSampleComponent.get();
+                            if (!activeItem) return <div></div>;
+                            const ComponentConstructor = activeItem.componentConstructor();
+                            return <div className="mt-8 rounded-lg border border-slate-300 bg-slate-50 p-4">
+                                <h3 className="font-bold text-slate-900">{activeItem.name} Canlı Demo</h3>
+                                <ComponentConstructor />
+                            </div>;
+                        }}
+                    </Stateful>
                 </section>
             </main>
             <footer className="mx-auto mt-16 w-full max-w-6xl rounded-3xl border border-slate-200 bg-blue-300 p-8 text-center text-sm text-slate-500 shadow-sm">
