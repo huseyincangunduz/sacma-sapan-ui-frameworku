@@ -61,7 +61,7 @@ function isComponentRenderResult(value: JsxChild): value is ComponentRenderResul
 }
 
 function appendJsxChild(parent: HTMLElement, child: JsxChild): void {
-    if (isComponentRenderResult(child) && child.element instanceof Node) {
+    if (isComponentRenderResult(child) ) {
         child.componentInstance.mount(parent, child.element);
         return;
     }

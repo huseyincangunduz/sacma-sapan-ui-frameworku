@@ -34,7 +34,7 @@ export abstract class NeolitComponent {
         NeolitComponent.componentInstances.delete(this.key);
     }
 
-    mount(target: HTMLElement, initialElement?: NeolitNode): NeolitNode | NeolitNode[] {
+    mount(target: HTMLElement, initialElement?: NeolitNode | NeolitNode[]): NeolitNode | NeolitNode[] {
         this._mountTarget = target;
         target.attributes.setNamedItem(document.createAttribute("data-neolit-mounted"));
         target.setAttribute("data-neolit-key", this.key);
