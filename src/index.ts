@@ -11,7 +11,7 @@ rootInjector.registerValue("app-axios-instance", axios.create({
     timeout: 1000,
 }));
 
-
+// Bootstrap
 
 document.addEventListener("DOMContentLoaded", () => {
     const root = document.getElementById("root");
