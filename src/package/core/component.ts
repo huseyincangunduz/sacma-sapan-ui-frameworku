@@ -34,12 +34,18 @@ export abstract class NeolitComponent {
         NeolitComponent.componentInstances.delete(this.key);
     }
 
-    mount(target: HTMLElement, initialElement?: NeolitNode | NeolitNode[]): NeolitNode | NeolitNode[] {
+    mount(target: HTMLElement, initialElement?: NeolitNode | NeolitNode[]): NeolitNode | NeolitNode[] | null {
+
         this._mountTarget = target;
         target.attributes.setNamedItem(document.createAttribute("data-neolit-mounted"));
         target.setAttribute("data-neolit-key", this.key);
 
         const currentEls = initialElement ?? this.render();
+
+        // Eğer initialElement sağlanmışsa ve sonradan render edilen elementin tipi initialElement ile uyuşmuyorsa, bu durumun render işlemi üzerinde sorunlara yol açabileceği konusunda bir uyarı verelim.
+        if (this._currentElement != null && typeof initialElement !== typeof currentEls) {
+            console.error("NEOLIT : Initial element type does not match rendered element type. This may cause issues with rendering. Please ensure that the initial element and rendered element are of the same type (either both should be NeolitNode or both should be NeolitNode[]).");
+        }
         this._currentElement = currentEls;
 
         if (!Array.isArray(this._currentElement)) {
@@ -76,9 +82,13 @@ export abstract class NeolitComponent {
                     this._mountTarget!.appendChild(el);
                 }
             });
-          
+
         } else {
-            this._mountTarget.replaceChild(newElement as Node, this._currentElement as Node);
+            if (newElement === null) {
+                this._mountTarget.removeChild(this._currentElement as Node);
+            } else {
+                this._mountTarget.replaceChild(newElement as Node, this._currentElement as Node);
+            }
         }
         this._currentElement = newElement;
     }

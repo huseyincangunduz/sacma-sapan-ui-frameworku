@@ -1,4 +1,5 @@
 import { getStateValue, isState, NeolitChild, NeolitComponent, NeolitNode, State, StateOrPlain } from "@ubs-platform/neolit/core";
+import { get } from "node:http";
 
 
 type ComponentConstructor = new (props?: Record<string, any>) => NeolitComponent;
@@ -97,7 +98,21 @@ export function jsx(tag: Tag, props: Props & { children?: JsxChild[] | JsxChild 
         }
         else {
             if (attributeKey === 'className' || attributeKey === 'klass') {
-                setAttributeWithStateSupport(el, 'class', attributeValue);
+                if (typeof attributeValue === "object" && !isState(attributeValue)) {
+                    // TODO: Eğer obje ise ve state değilse, içindeki string keyleri ve değerleri true ya da falsa olmasına göre class ataması yap. Örneğin { "active": isActive } gibi bir kullanım olabilir.
+                    for (const [classKey, classValue] of Object.entries(attributeValue)) {
+                        if (getStateValue(classValue)) {
+                            el.classList.add(classKey);
+                            // todo: value bir state ise veya value bir state değilse ama değeri boolean ise, classKey'i ekle veya çıkar. Yani classValue true ise classKey'i ekle, false ise classKey'i çıkar.
+                        } else {
+                            el.classList.remove(classKey);
+                        }
+                    }
+
+                    setAttributeWithStateSupport(el, 'class', attributeValue);
+                } else {
+                    setAttributeWithStateSupport(el, 'class', attributeValue);
+                }
             } else {
                 setAttributeWithStateSupport(el, attributeKey, attributeValue);
             }

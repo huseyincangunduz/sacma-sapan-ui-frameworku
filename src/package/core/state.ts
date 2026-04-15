@@ -103,14 +103,6 @@ export function isState<T>(value: any): value is State<T> {
     return value instanceof State;
 }
 
-export function isStateOrPlain<T>(value: any): value is StateOrPlain<T> {
-    return value instanceof State || typeof value !== "object" || value === null;
-}
-
-export function isStateOrPlainArray<T>(value: any): value is StateOrPlain<T>[] {
-    return Array.isArray(value) && value.every(item => isStateOrPlain(item));
-}
-
 export function isStateArray<T>(value: any): value is State<T[]> {
     return value instanceof State && Array.isArray(value.get());
 }
@@ -134,5 +126,48 @@ export function isPlainObject<T>(value: any): value is T {
 export function isTheyEqualArrays<T>(a: StateOrPlain<T>[], b: StateOrPlain<T>[]): boolean {
     if (a.length !== b.length) return false;
     return a.every((item, index) => isTheyEqual(item, b[index]));
+}
+
+export class AsyncState<T> extends State<T> {
+    activePromise: Promise<T> | null = null;
+    busy = state(false);
+    /**
+     * Holds the error object if the promise is rejected, otherwise null. 
+     * This allows components to react to errors in asynchronous 
+     * operations without needing try-catch blocks around their async calls.
+     */
+    errorObject = state<Error | null>(null);
+
+    constructor(promise: Promise<T>, initialData?: T) {
+        super(initialData as T);
+        this.setAsync(promise);
+    }
+
+    public setAsync(promise: Promise<T>): void {
+        if (this.activePromise === promise) {
+            return; // Same promise, do nothing
+        }
+        if (this.busy.get()) {
+            console.warn("AsyncState is already processing a promise. Ignoring new promise until the current one resolves.");
+            return; // Already processing a promise, ignore new one
+            // TODO: Queue the new promise or cancel the previous one if possible, depending on the use case
+        }
+        // this.set(promise);
+        this.activePromise = promise;
+        this.busy.set(true);
+        promise.then(result => {
+            this.set(result);
+            this.busy.set(false);
+            this.errorObject.set(null);
+        }).catch(error => {
+            console.error("Error in AsyncState:", error);
+            this.errorObject.set(error);
+            this.busy.set(false);
+        });
+    }
+}
+
+export function asyncState<T>(promise: Promise<T>, initialData?: T): AsyncState<T> {
+    return new AsyncState(promise, initialData) as AsyncState<T>;
 }
 

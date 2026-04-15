@@ -1,38 +1,13 @@
 import { Introduction } from "./landing/introduction";
 
-import { Injectable, inject } from "@ubs-platform/neolit/injectables";
+import { InjectHolder, Injectable, createInjector, inject, rootInjector } from "@ubs-platform/neolit/injectables";
+import { BookList } from "./lotus-app/components/book-list";
+import axios from "axios";
 
-const API_URL = Symbol("API_URL");
-
-@Injectable({ providedIn: "root" })
-class Logger {
-    constructor(
-    ) {
-    }
-
-    public info(message: string): void {
-        console.info(`[Logger]: ${message}`);
-    }
-}
-
-
-@Injectable({ providedIn: "root", deps: [Logger] })
-class ApiService {
-    constructor(
-        private logger: Logger,
-    ) {
-    }
-
-    public fetchData(): void {
-        debugger
-        this.logger.info(`Fetching data from api url...`);
-        // Simulate fetching data...
-    }
-}
-
-// Manually register API_URL value in the root injector
-inject(ApiService).fetchData(); // This will throw an error because API_URL is not registered
-
+rootInjector.registerValue("app-axios-instance", axios.create({
+    baseURL: "",
+    timeout: 1000,
+}));
 
 document.addEventListener("DOMContentLoaded", () => {
     const root = document.getElementById("root");
@@ -40,6 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Root element not found");
         return;
     }
-    const component = new Introduction();
+    // const component = new Introduction();
+
+    const component = new BookList();
     component.mount(root);
 });
