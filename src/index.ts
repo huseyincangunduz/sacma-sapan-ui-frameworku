@@ -15,8 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Root element not found");
         return;
     }
-    // const component = new Introduction();
+    const component = new Introduction();
 
-    const component = new BookList();
+    // const component = new BookList();
     component.mount(root);
 });
