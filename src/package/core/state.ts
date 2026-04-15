@@ -3,7 +3,7 @@ export class State<DATA> {
 
     private data: DATA;
 
-    changeListeners: Array<(newData: DATA) => void> = [];
+    changeListeners: Array<(newData: DATA, oldData?: DATA) => void> = [];
 
     constructor(initialData: DATA) {
         this.data = initialData;
@@ -14,11 +14,12 @@ export class State<DATA> {
     }
 
     set(newData: DATA): void {
+        const oldValue = this.data;
         const triggerFlag = this.determineTriggerIsRequired(newData);
         this.data = newData;
 
         if (triggerFlag) {
-            this.changeListeners.forEach(listener => listener(newData));
+            this.changeListeners.forEach(listener => listener(newData, oldValue));
         }
     }
 
@@ -32,15 +33,24 @@ export class State<DATA> {
         this.data = newData;
 
         if (triggerFlag) {
-            this.changeListeners.forEach(listener => listener(newData));
+            this.changeListeners.forEach(listener => listener(newData, this.data));
         }
     }
 
-    subscribe(listener: (newData: DATA) => void): void {
+    map<NEW_DATA>(mapper: (currentData: DATA) => NEW_DATA): State<NEW_DATA> {
+        const mappedState = new State<NEW_DATA>(mapper(this.data));
+        this.subscribe((newData) => {
+            const mappedValue = mapper(newData);
+            mappedState.set(mappedValue);
+        });
+        return mappedState;
+    }
+
+    subscribe(listener: (newData: DATA, oldData?: DATA) => void): void {
         this.changeListeners.push(listener);
     }
 
-    unsubscribe(listener: (newData: DATA) => void): void {
+    unsubscribe(listener: (newData: DATA, oldData?: DATA) => void): void {
         const index = this.changeListeners.indexOf(listener);
         if (index !== -1) {
             this.changeListeners.splice(index, 1);
@@ -51,9 +61,36 @@ export class State<DATA> {
         return this.data?.toString() ?? "";
     }
 
+    arrayMap<NEW_DATA>(mapper: (item: any, index: number) => NEW_DATA): State<NEW_DATA[]> {
+        if (!Array.isArray(this.data)) {
+            throw new Error("Current state data is not an array");
+        }
+        const mappedState = new State<NEW_DATA[]>(this.data.map(mapper));
+        this.subscribe((newData) => {
+            if (!Array.isArray(newData)) {
+                throw new Error("New state data is not an array");
+            }
+            const mappedValue = newData.map(mapper);
+            mappedState.set(mappedValue);
+        });
+        return mappedState;
+    }
 
+    arrayFilter(predicate: (item: any, index: number) => boolean): State<any[]> {
+        if (!Array.isArray(this.data)) {
+            throw new Error("Current state data is not an array");
+        }
+        const filteredState = new State<any[]>(this.data.filter(predicate));
+        this.subscribe((newData) => {
+            if (!Array.isArray(newData)) {
+                throw new Error("New state data is not an array");
+            }
+            const filteredValue = newData.filter(predicate);
+            filteredState.set(filteredValue);
+        });
+        return filteredState;
+    }
 }
-
 
 export class ComputedState<DATA> extends State<DATA> {
 
@@ -70,13 +107,38 @@ export class ComputedState<DATA> extends State<DATA> {
     }
 
     recompute(): void {
+        const oldValue = this.get();
         const newData = this.computeFn();
         const triggerFlag = this.determineTriggerIsRequired(newData);
         (this as any).data = newData;
 
         if (triggerFlag) {
-            this.changeListeners.forEach(listener => listener(newData));
+            this.changeListeners.forEach(listener => listener(newData, oldValue));
         }
+    }
+
+}
+
+export class CombinedStateUpdateInfo {
+    constructor(public updatedState: StateOrPlain<any>, public newValue: any, public oldValue: any = null) {
+    }
+}
+
+export class CombinedState extends State<CombinedStateUpdateInfo> {
+
+
+
+    constructor(statesListened: StateOrPlain<any>[]) {
+        super({} as CombinedStateUpdateInfo);
+        for (const stateOrPlain of statesListened) {
+            if (stateOrPlain instanceof State) {
+                stateOrPlain.subscribe(() => this.recompute(new CombinedStateUpdateInfo(stateOrPlain, stateOrPlain.get(), stateOrPlain.get())));
+            }
+        }
+    }
+
+    recompute(updateInfo: CombinedStateUpdateInfo): void {
+        this.set(updateInfo);
     }
 
 }
@@ -131,6 +193,7 @@ export function isTheyEqualArrays<T>(a: StateOrPlain<T>[], b: StateOrPlain<T>[])
 export class AsyncState<T> extends State<T> {
     activePromise: Promise<T> | null = null;
     busy = state(false);
+    initialData: T | undefined;
     /**
      * Holds the error object if the promise is rejected, otherwise null. 
      * This allows components to react to errors in asynchronous 
@@ -141,6 +204,7 @@ export class AsyncState<T> extends State<T> {
     constructor(promise: Promise<T>, initialData?: T) {
         super(initialData as T);
         this.setAsync(promise);
+        this.initialData = initialData;
     }
 
     public setAsync(promise: Promise<T>): void {
@@ -163,6 +227,7 @@ export class AsyncState<T> extends State<T> {
             console.error("Error in AsyncState:", error);
             this.errorObject.set(error);
             this.busy.set(false);
+            this.set(this.initialData as T); // Optionally reset the data to initialData or keep the old data depending on the use case
         });
     }
 }

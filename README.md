@@ -15,6 +15,7 @@ A lightweight, class-based, declarative UI framework for building web interfaces
   - [State](#state)
   - [JSX](#jsx)
   - [Structural Directives](#structural-directives)
+    - [`fromState` fluent API](#fromstate--fluent-builder-api)
   - [Dependency Injection](#dependency-injection)
 - [Scripts](#scripts)
 - [Package Entrypoints](#package-entrypoints)
@@ -168,6 +169,39 @@ The JSX runtime maps tags to real DOM elements or component constructors.
 ### Structural Directives
 
 Import from `@ubs-platform/neolit/structural`.
+
+#### `fromState` — Fluent builder API
+
+Instead of using `<For>`, `<If>`, and `<Stateful>` directly as JSX components, you can use the `fromState` helper for a chainable, fluent API.
+
+```tsx
+import { fromState } from "@ubs-platform/neolit/structural";
+
+// Conditional rendering with an else branch
+{fromState(this.isVisible)
+  .renderIf(() => <p>Visible!</p>)
+  .else(() => <small>Not visible.</small>)}
+
+// Reactive list with a key function
+{fromState(this.items)
+  .keyFn(item => item.id)
+  .renderFor((item, index) => <li>{item.name}</li>)}
+
+// Scoped stateful re-render
+{fromState(this.counter)
+  .stateful(() => <strong>{this.counter.get()}</strong>)}
+```
+
+| Method | Returns | Description |
+|---|---|---|
+| `fromState(state)` | `FromState` | Creates a builder for the given state |
+| `.renderIf(fn)` | `() => If` | Renders `fn()` when state is truthy |
+| `.renderIf(fn).else(fn)` | `() => If` | Adds an else branch |
+| `.keyFn(fn)` | `FromState` | Sets a key extractor for list rendering (chainable) |
+| `.renderFor(fn)` | `() => For` | Renders each item in the state array |
+| `.stateful(fn)` | `() => Stateful` | Scoped re-render on state change |
+
+---
 
 #### `For` — Reactive list rendering
 
