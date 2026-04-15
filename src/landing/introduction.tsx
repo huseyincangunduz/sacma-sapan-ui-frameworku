@@ -234,23 +234,23 @@ export class Introduction extends NeolitComponent {
             </p>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <For items={this.sampleComponents}>
-                {(item) => (
-                  <article className="rounded-xl border border-orange-200 bg-white p-4">
-                    <h3 className="font-bold text-slate-900">{item.name}</h3>
-                    <p className="mt-1 font-mono text-xs text-orange-700">
-                      {item.source}
-                    </p>
-                    <p className="mt-2 text-sm text-slate-600">{item.note}</p>
-                    <button
-                      onClick={() => this.activeSampleComponent.set(item)}
-                    >
-                      Componenti dene{" "}
-                    </button>
-                  </article>
-                )}
-              </For>
+              {fromState(this.sampleComponents).renderFor((item) => (
+                <article className="rounded-xl border border-orange-200 bg-white p-4">
+                  <h3 className="font-bold text-slate-900">{item.name}</h3>
+                  <p className="mt-1 font-mono text-xs text-orange-700">
+                    {item.source}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-600">{item.note}</p>
+                  <button
+                    onClick={() => this.activeSampleComponent.set(item)}
+                    className="mt-3 rounded-lg bg-orange-500 px-3 py-1 text-sm font-semibold text-white"
+                  >
+                    Componenti dene{" "}
+                  </button>
+                </article>
+              ))}
             </div>
+
             {fromState(this.activeSampleComponent).renderIf(() => (
               <div className="mt-8 rounded-lg border border-slate-300 bg-slate-50 p-4">
                 <h3 className="font-bold text-slate-900">

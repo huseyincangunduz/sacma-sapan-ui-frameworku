@@ -8,6 +8,7 @@ export class FromState {
      *
      */
     private _keyFn?: (item: any) => string | number;
+    private _elseChildren?: () => NeolitNode;
 
     constructor(private state: State<any>) {
     }
@@ -18,23 +19,35 @@ export class FromState {
     }
 
 
-    renderFor<T = any>(renderItem: (item: T, index: number) => NeolitNode): For<T> {
-        return new For({
+    renderFor<T = any>(renderItem: (item: T, index: number) => NeolitNode): () => For<T> {
+        return () => new For({
             items: this.state,
             keyFn: this._keyFn,
             children: (item, index) => renderItem(item, index),
         });
     }
 
-    renderIf(renderItem: () => NeolitNode): If {
-        return new If({
-            condition: this.state,
-            children: () => renderItem(),
-        });
+    renderIf(renderItem: () => NeolitNode,): (() => If) & { else: (elseRenderItem: () => NeolitNode) => (() => If) } {
+
+        const fn = () => {
+
+            return new If({
+                condition: this.state,
+                children: () => renderItem(),
+                elseChildren: this._elseChildren,
+            });
+        }
+
+        fn["else"] = (elseRenderItem: () => NeolitNode) => {
+            this._elseChildren = elseRenderItem;
+            return fn;
+        }
+
+        return fn;
     }
 
-    stateful<T = any>(renderItem: () => NeolitNode): Stateful<T> {
-        return new Stateful({
+    stateful<T = any>(renderItem: () => NeolitNode): () => Stateful<T> {
+        return () => new Stateful({
             state: this.state,
             children: () => renderItem(),
         });

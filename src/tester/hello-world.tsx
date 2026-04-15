@@ -33,17 +33,18 @@ export class ConditionalBlockDemo extends NeolitComponent {
         <h4>Yapisal Ornek 1: Conditional Block</h4>
         <button onclick={() => this.toggle()}>Detay blogunu ac/kapat</button>
         <div>{this.showDetails}</div>
-        {fromState(this.showDetails).stateful(() =>
-          this.showDetails.get() ? (
+
+        {fromState(this.showDetails)
+          .renderIf(() => (
             <p testProperty={() => console.log("Test property")}>
-              Bu blok true iken var olur.
+              ANA BLOK: Bu blok true iken var olur.
             </p>
-          ) : (
+          ))
+          .else(() => (
             <small testProperty={() => console.log("Test property")}>
-              Bu blok false iken var olur.
+             ELSE BLOĞU: Bu blok false iken var olur.
             </small>
-          ),
-        )}
+          ))}
       </section>
     );
   }

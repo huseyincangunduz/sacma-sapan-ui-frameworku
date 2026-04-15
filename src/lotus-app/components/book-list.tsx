@@ -3,9 +3,7 @@ import {
   computed,
   NeolitComponent,
   NeolitNode,
-  state,
 } from "@ubs-platform/neolit/core";
-import { For } from "../../package/structural/forloop";
 import { inject } from "@ubs-platform/neolit/injectables";
 import { BookService } from "../services/book.service";
 import { fromState } from "@ubs-platform/neolit/structural";
@@ -16,7 +14,7 @@ export class BookList extends NeolitComponent {
     this.bookService.getBooks({ bookPublisherType: "ALL" }),
     { data: [] },
   );
-  bookListMapped = computed([this.bookList], () => this.bookList.get().data);
+
 
   constructor() {
     super();
@@ -49,7 +47,7 @@ export class BookList extends NeolitComponent {
         ))}
 
         <div className="flex flex-wrap gap-2">
-          {fromState(this.bookListMapped).keyFn(a => a._id).renderFor((item) => (
+          {fromState(this.bookList.map(a => a.data)).keyFn(a => a._id).renderFor((item) => (
             <div className="card" key={item._id}>
               <img
                 height="100px"
@@ -67,40 +65,3 @@ export class BookList extends NeolitComponent {
   }
 }
 
-{
-  /* <ubs-table-ngx style="width: 100%" [items]="books">
-  <column name="fullname">
-    <ng-template header> {{ 'fullname' | translate }}</ng-template>
-    <ng-template data let-item="item">
-      <div class="flex gap-1 align-items-center">
-        <img
-          height="30px"
-          class="rounded"
-          src="/api/file/BOOK_THUMB/{{ item._id }}"
-        />
-        {{ item.metaInfo.name }}
-      </div>
-    </ng-template>
-  </column>
-
-  <column name="actions">
-    <ng-template header>Aksiyonlar </ng-template>
-    <ng-template data let-item="item">
-      <block-button
-        [hasContent]="false"
-        iconClass="pi pi-pencil"
-        (click)="openInLotus(item._id)"
-        buttonClass="border mr-1"
-
-      ></block-button>
-      <block-button
-        [hasContent]="false"
-        iconClass="pi pi-key"
-        buttonClass="border"
-        [routerLink]="['admin-tools', item._id]"
-        ></block-button
-      >
-    </ng-template>
-  </column>
-</ubs-table-ngx> */
-}

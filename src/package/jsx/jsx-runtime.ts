@@ -1,6 +1,4 @@
 import { getStateValue, isState, NeolitChild, NeolitComponent, NeolitNode, State, StateOrPlain } from "@ubs-platform/neolit/core";
-import { get } from "node:http";
-
 
 type ComponentConstructor = new (props?: Record<string, any>) => NeolitComponent;
 type Tag = string | ComponentConstructor;
@@ -13,7 +11,9 @@ export interface ComponentRenderResult {
 
 type JsxChild = NeolitChild | ComponentRenderResult;
 
-function manupileElementByStateOrNot(element: HTMLElement, stateOrPlain: StateOrPlain<any>, callback: (value: any) => void) {
+// --- State binding helpers ---
+
+function bindToStateOrPlain(element: HTMLElement, stateOrPlain: StateOrPlain<any>, callback: (value: any) => void) {
     if (isState(stateOrPlain)) {
         const cb = () => callback(getStateValue(stateOrPlain));
         stateOrPlain.subscribe(cb);
@@ -25,27 +25,24 @@ function manupileElementByStateOrNot(element: HTMLElement, stateOrPlain: StateOr
 }
 
 function setAttributeWithStateSupport(element: HTMLElement, attributeKey: string, stateOrPlainValue: StateOrPlain<any>): void {
-    manupileElementByStateOrNot(element, stateOrPlainValue, (value) => {
+    bindToStateOrPlain(element, stateOrPlainValue, (value) => {
         element.setAttribute(attributeKey, String(value));
     });
 }
 
 function setStyleWithStateSupport(element: HTMLElement, styleKey: string, stateOrPlainValue: StateOrPlain<any>): void {
-    manupileElementByStateOrNot(element, stateOrPlainValue, (value) => {
+    bindToStateOrPlain(element, stateOrPlainValue, (value) => {
         Object.assign(element.style, { [styleKey]: value });
     });
 }
 
-
-
+// --- Child helpers ---
 
 function normalizeChild(child: NeolitChild): Node {
     if (child === null || child === undefined) return document.createTextNode("");
     if (child instanceof State) {
         const textNode = document.createTextNode(child.toString());
-        child.subscribe(() => {
-            textNode.textContent = child.toString();
-        });
+        child.subscribe(() => { textNode.textContent = child.toString(); });
         return textNode;
     }
     if (typeof child === "string" || typeof child === "number") {
@@ -62,7 +59,7 @@ function isComponentRenderResult(value: JsxChild): value is ComponentRenderResul
 }
 
 function appendJsxChild(parent: HTMLElement, child: JsxChild): void {
-    if (isComponentRenderResult(child) ) {
+    if (isComponentRenderResult(child)) {
         child.componentInstance.mount(parent, child.element);
         return;
     }
@@ -72,6 +69,57 @@ function appendJsxChild(parent: HTMLElement, child: JsxChild): void {
     }
     parent.appendChild(normalizeChild(child as NeolitChild));
 }
+
+function appendJsxChildOrFunction(parent: HTMLElement, child: JsxChild | (() => JsxChild)): void {
+    if (typeof child === "function") {
+        const result = (child as () => JsxChild)();
+        if (result instanceof NeolitComponent) {
+            appendJsxChild(parent, { componentInstance: result, element: result.render() });
+        } else {
+            console.warn("JSX child function must return a NeolitComponent instance. Got:", result);
+        }
+    } else {
+        appendJsxChild(parent, child);
+    }
+}
+
+function toChildArray(children: JsxChild[] | JsxChild | undefined): (JsxChild | (() => JsxChild))[] {
+    if (children === undefined) return [];
+    return Array.isArray(children) ? children : [children];
+}
+
+// --- Prop helpers ---
+
+function applyClassName(el: HTMLElement, value: unknown): void {
+    if (typeof value === "object" && !isState(value)) {
+        // TODO: value bir state ise veya value bir state değilse ama değeri boolean ise,
+        // classKey'i ekle veya çıkar. Yani classValue true ise classKey'i ekle, false ise classKey'i çıkar.
+        for (const [classKey, classValue] of Object.entries(value!)) {
+            el.classList.toggle(classKey, !!getStateValue(classValue));
+        }
+        setAttributeWithStateSupport(el, "class", value);
+    } else {
+        setAttributeWithStateSupport(el, "class", value);
+    }
+}
+
+function applyProps(el: HTMLElement, attrs: Record<string, unknown>): void {
+    for (const [key, value] of Object.entries(attrs)) {
+        if (key.startsWith("on") && typeof value === "function") {
+            el.addEventListener(key.slice(2).toLowerCase(), value as EventListener);
+        } else if (key === "style" && typeof value === "object") {
+            for (const [styleKey, styleValue] of Object.entries(value!)) {
+                setStyleWithStateSupport(el, styleKey, styleValue);
+            }
+        } else if (key === "className" || key === "klass") {
+            applyClassName(el, value);
+        } else {
+            setAttributeWithStateSupport(el, key, value);
+        }
+    }
+}
+
+// --- JSX factory ---
 
 export function jsx(tag: ComponentConstructor, props: Props & { children?: JsxChild[] | JsxChild }): ComponentRenderResult;
 export function jsx(tag: string, props: Props & { children?: JsxChild[] | JsxChild }): HTMLElement;
@@ -84,47 +132,8 @@ export function jsx(tag: Tag, props: Props & { children?: JsxChild[] | JsxChild 
     }
 
     const el = document.createElement(tag);
-
-    for (const [attributeKey, attributeValue] of Object.entries(attrs ?? {})) {
-        if (attributeKey.startsWith("on") && typeof attributeValue === "function") {
-            const eventName = attributeKey.slice(2).toLowerCase();
-            el.addEventListener(eventName, attributeValue as EventListener);
-        } else if (attributeKey === "style") {
-            if (typeof attributeValue === "object") {
-                for (const [styleKey, styleValue] of Object.entries(attributeValue!)) {
-                    setStyleWithStateSupport(el, styleKey, styleValue);
-                }
-            }
-        }
-        else {
-            if (attributeKey === 'className' || attributeKey === 'klass') {
-                if (typeof attributeValue === "object" && !isState(attributeValue)) {
-                    // TODO: Eğer obje ise ve state değilse, içindeki string keyleri ve değerleri true ya da falsa olmasına göre class ataması yap. Örneğin { "active": isActive } gibi bir kullanım olabilir.
-                    for (const [classKey, classValue] of Object.entries(attributeValue)) {
-                        if (getStateValue(classValue)) {
-                            el.classList.add(classKey);
-                            // todo: value bir state ise veya value bir state değilse ama değeri boolean ise, classKey'i ekle veya çıkar. Yani classValue true ise classKey'i ekle, false ise classKey'i çıkar.
-                        } else {
-                            el.classList.remove(classKey);
-                        }
-                    }
-
-                    setAttributeWithStateSupport(el, 'class', attributeValue);
-                } else {
-                    setAttributeWithStateSupport(el, 'class', attributeValue);
-                }
-            } else {
-                setAttributeWithStateSupport(el, attributeKey, attributeValue);
-            }
-        }
-    }
-
-    if (Array.isArray(children)) {
-        children.forEach(child => appendJsxChild(el, child));
-    } else if (children !== undefined) {
-        appendJsxChild(el, children);
-    }
-
+    applyProps(el, attrs);
+    toChildArray(children).forEach(child => appendJsxChildOrFunction(el, child));
     return el;
 }
 
