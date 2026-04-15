@@ -1,4 +1,4 @@
-import {  getStateValue, isState, NeolitChild, NeolitComponent, NeolitNode, State, StateOrPlain } from "@ubs-platform/neolit/core";
+import { getStateValue, isState, NeolitChild, NeolitComponent, NeolitNode, State, StateOrPlain } from "@ubs-platform/neolit/core";
 
 type ComponentConstructor = new (props?: Record<string, any>) => NeolitComponent;
 type Tag = string | ComponentConstructor;
