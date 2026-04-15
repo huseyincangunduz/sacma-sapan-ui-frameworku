@@ -1,10 +1,12 @@
 import { rootInjector } from "./root-container";
-import { Constructable, InjectionToken } from "./injectholder";
+import { Constructable, InjectHolder, InjectionToken } from "./injectholder";
 
 const INJECT_TOKENS_KEY = "__injectTokens__";
 
+export type InjectableScope = "root" | InjectHolder | (() => InjectHolder);
+
 export interface InjectableOptions {
-    providedIn?: "root";
+    providedIn?: InjectableScope;
     token?: InjectionToken;
     deps?: InjectionToken[];
     singleton?: boolean;
@@ -58,8 +60,25 @@ export function Injectable(options: InjectableOptions = {}): ClassDecorator {
             setInjectTokens(targetClass, deps);
         }
 
-        if (providedIn === "root") {
-            rootInjector.registerClass(token ?? targetClass, targetClass, deps, singleton);
+        const injector = resolveProvidedIn(providedIn);
+        if (injector) {
+            injector.registerClass(token ?? targetClass, targetClass, deps, singleton);
         }
     };
+}
+
+function resolveProvidedIn(providedIn?: InjectableScope): InjectHolder | null {
+    if (!providedIn) {
+        return null;
+    }
+
+    if (providedIn === "root") {
+        return rootInjector;
+    }
+
+    if (typeof providedIn === "function") {
+        return providedIn();
+    }
+
+    return providedIn;
 }

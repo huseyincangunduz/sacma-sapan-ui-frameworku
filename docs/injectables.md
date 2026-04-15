@@ -13,7 +13,7 @@ Hedefler:
 ## Temel Bilesenler
 
 ### 1) `InjectHolder`
-Container'dir. Provider kaydi, resolve, singleton cache ve circular dependency kontrolu burada yapilir.
+Container'dir. Provider kaydi, resolve, singleton cache, circular dependency kontrolu ve parent injector fallback burada yapilir.
 
 Desteklenen provider tipleri:
 - `useValue`
@@ -33,13 +33,17 @@ Yardimcilar:
 - `inject(token)`
 - `provideValue(token, value)`
 - `provideClass(token, useClass)`
-- `createInjector()`
+- `createInjector(parent?)`
+
+`createInjector(parent)` ile child injector olusturulabilir. Bir token child injector'da bulunamazsa parent injector'a dusulur.
 
 ### 3) `@Injectable(...)`
-Service siniflarini root'a kaydetmek ve dependency metadata tanimlamak icin class decorator.
+Service siniflarini bir injector'a kaydetmek ve dependency metadata tanimlamak icin class decorator.
 
 Opsiyonlar:
 - `providedIn: "root"`
+- `providedIn: injectorInstance`
+- `providedIn: () => injectorInstance`
 - `token`
 - `deps`
 - `singleton`
@@ -51,13 +55,15 @@ Constructor parametre decorator'u. Ozellikle class olmayan tokenlar (symbol/stri
 
 1. Token map'te var mi kontrol edilir.
 2. Varsa cache varsa cache doner.
-3. Yoksa token bir class ise auto provider uretilir (lazy construct).
-4. Provider `useClass` ise deps listesi su sirayla okunur:
+3. Yoksa current injector'da provider aranir.
+4. Current injector'da yoksa parent injector varsa parent'a dusulur.
+5. Hala yoksa token bir class ise auto provider uretilir (lazy construct).
+6. Provider `useClass` ise deps listesi su sirayla okunur:
    - acik `deps`
    - sinif metadata'si (`@Inject` veya static `inject`)
-5. Tum bagimliliklar recursive resolve edilir.
-6. `singleton !== false` ise sonuc cache'lenir.
-7. Cycle varsa hata firlatilir.
+7. Tum bagimliliklar recursive resolve edilir.
+8. `singleton !== false` ise sonuc cache'lenir.
+9. Cycle varsa hata firlatilir.
 
 ## Ornekler
 
@@ -135,6 +141,57 @@ rootInjector.registerFactory(NOW_TOKEN, () => new Date().toISOString(), false);
 console.log(rootInjector.resolve<string>(NOW_TOKEN));
 ```
 
+### Ornek 5: Child injector
+
+```ts
+import { createInjector, rootInjector } from "@ubs-platform/neolit/injectables";
+
+const featureInjector = createInjector(rootInjector);
+featureInjector.registerValue("feature-name", "books");
+
+console.log(featureInjector.resolve("feature-name"));
+```
+
+Bu yapida `featureInjector`, kendi tokenlarini cozer; bulamazsa `rootInjector`'a duser.
+
+### Ornek 6: Ozel injector'a `@Injectable` kaydi
+
+```ts
+import { Injectable, createInjector, rootInjector } from "@ubs-platform/neolit/injectables";
+
+const featureInjector = createInjector(rootInjector);
+
+@Injectable({ providedIn: featureInjector })
+class FeatureLoggerService {
+  log(message: string): void {
+    console.log("[feature]", message);
+  }
+}
+
+const featureLogger = featureInjector.resolve(FeatureLoggerService);
+featureLogger.log("ready");
+```
+
+Declaration order veya import dongusu riski varsa getter formu kullanilabilir:
+
+```ts
+@Injectable({ providedIn: () => featureInjector })
+class FeatureLoggerService {}
+```
+
+### Ornek 7: Runtime local injector icin explicit registration
+
+```ts
+import { createInjector, rootInjector } from "@ubs-platform/neolit/injectables";
+
+const localInjector = createInjector(rootInjector);
+localInjector.registerClass(UserService, UserService);
+
+const userService = localInjector.resolve(UserService);
+```
+
+Bu model, runtime'da olusan component veya feature instance scope'lari icin `providedIn` kullanmaktan daha temizdir.
+
 ## Component Tarafi Notu
 
 Simdilik componentlerde constructor otomatik inject yerine manuel kullanim onerilir:
@@ -155,3 +212,5 @@ Bu tercih component yasam dongusu ile DI karmasikligini ayri tutar.
 - Singleton davranisi default aciktir (`singleton: true`).
 - Factory provider'da `singleton: false` verirsen her resolve'ta yeni instance uretilir.
 - String token yerine `symbol` veya class token tercih et.
+- `providedIn` daha cok statik olarak bilinen injector'lar icin uygundur.
+- Runtime'da olusan local injector'larda `registerClass/registerValue/registerFactory` ile explicit kayit daha sagliklidir.

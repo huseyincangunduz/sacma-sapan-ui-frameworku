@@ -6,8 +6,8 @@ export function inject<T>(token: InjectionToken<T>, injector: InjectHolder = roo
     return injector.resolve(token);
 }
 
-export function createInjector(): InjectHolder {
-    return new InjectHolder();
+export function createInjector(parent?: InjectHolder): InjectHolder {
+    return new InjectHolder(parent);
 }
 
 export function provideValue<T>(token: InjectionToken<T>, value: T, injector: InjectHolder = rootInjector): void {

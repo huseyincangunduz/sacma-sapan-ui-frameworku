@@ -250,9 +250,9 @@ import { Stateful } from "@ubs-platform/neolit/structural";
 
 ### Bağımlılık Enjeksiyonu
 
-Tekil (singleton) önbellekleme ve döngüsel bağımlılık tespiti ile Angular tarzı bir DI sistemi.
+Tekil (singleton) önbellekleme, döngüsel bağımlılık tespiti ve hiyerarşik injector desteği ile Angular tarzı bir DI sistemi.
 
-#### Servis kaydetme
+#### Root scope'a servis kaydetme
 
 ```ts
 import { Injectable } from "@ubs-platform/neolit/injectables";
@@ -264,6 +264,28 @@ class LogService {
         console.log(mesaj);
     }
 }
+```
+
+#### Ozel injector'a servis kaydetme
+
+```ts
+import { Injectable, createInjector, rootInjector } from "@ubs-platform/neolit/injectables";
+
+const featureInjector = createInjector(rootInjector);
+
+@Injectable({ providedIn: featureInjector })
+class FeatureLogService {
+    kaydet(mesaj: string) {
+        console.log("[feature]", mesaj);
+    }
+}
+```
+
+Declaration order problemi yasamamak icin getter da verebilirsin:
+
+```ts
+@Injectable({ providedIn: () => featureInjector })
+class FeatureLogService {}
 ```
 
 #### Servis enjekte etme
@@ -281,6 +303,12 @@ class BenimBileşenim extends NeolitComponent {
 }
 ```
 
+Belirli bir injector uzerinden resolve etmek de mumkun:
+
+```ts
+const featureLog = inject(FeatureLogService, featureInjector);
+```
+
 #### Değer kaydetme
 
 ```ts
@@ -289,6 +317,18 @@ import axios from "axios";
 
 rootInjector.registerValue("http-client", axios.create({ baseURL: "/api" }));
 ```
+
+#### Child injector olusturma
+
+```ts
+import { createInjector, rootInjector } from "@ubs-platform/neolit/injectables";
+
+const featureInjector = createInjector(rootInjector);
+
+featureInjector.registerValue("feature-id", "books");
+```
+
+Bir token local injector'da bulunmazsa parent injector'a dusulur.
 
 #### Sınıf dışı token'ları enjekte etme
 
@@ -307,6 +347,19 @@ class ApiServisi {
 }
 ```
 
+#### Dinamik local injector kullanimi
+
+Injector runtime'da olusuyorsa `providedIn` yerine explicit registration daha uygundur.
+
+```ts
+const localInjector = createInjector(rootInjector);
+localInjector.registerClass(ApiServisi, ApiServisi);
+
+const apiServisi = localInjector.resolve(ApiServisi);
+```
+
+Bu kullanim genelde component instance, feature instance veya request bazli scope'lar icin daha uygundur.
+
 **Sağlayıcı (provider) türleri:**
 
 | Tür | Açıklama |
@@ -314,6 +367,16 @@ class ApiServisi {
 | `useValue` | Düz bir değer kaydeder |
 | `useClass` | İlk çözümlenmede örneklenen bir sınıf kaydeder |
 | `useFactory` | `(injector) => T` biçiminde bir fabrika fonksiyonu kaydeder |
+
+**`@Injectable` icin scope secenekleri:**
+
+| Secenek | Aciklama |
+|---|---|
+| `providedIn: "root"` | Global root injector'a kaydeder |
+| `providedIn: injectorInstance` | Belirli bir injector'a kaydeder |
+| `providedIn: () => injectorInstance` | Injector'u lazy olarak alip oraya kaydeder |
+
+`createInjector(parent)` opsiyonel parent fallback ile yeni injector olusturur.
 
 ---
 

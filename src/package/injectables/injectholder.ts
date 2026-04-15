@@ -27,10 +27,12 @@ interface ProviderRecord<T> {
 export class InjectHolder {
     private providerMap: Map<InjectionToken, ProviderRecord<any>>;
     private resolvingStack: InjectionToken[];
+    private parent?: InjectHolder;
 
-    constructor() {
+    constructor(parent?: InjectHolder) {
         this.providerMap = new Map();
         this.resolvingStack = [];
+        this.parent = parent;
     }
 
     register<T>(token: InjectionToken<T>, providerOrValue: Provider<T> | T): void {
@@ -54,7 +56,25 @@ export class InjectHolder {
     }
 
     resolve<T>(token: InjectionToken<T>): T {
-        const providerRecord = this.getOrCreateProviderRecord(token);
+        const providerRecord = this.getProviderRecord(token);
+
+        if (!providerRecord) {
+            if (this.parent) {
+                return this.parent.resolve(token);
+            }
+
+            const autoProviderRecord = this.createAutoProviderRecord(token);
+            if (autoProviderRecord) {
+                return this.resolveProviderRecord(token, autoProviderRecord);
+            }
+
+            throw new Error(`No injectable found for token: ${this.describeToken(token)}`);
+        }
+
+        return this.resolveProviderRecord(token, providerRecord);
+    }
+
+    private resolveProviderRecord<T>(token: InjectionToken<T>, providerRecord: ProviderRecord<T>): T {
 
         if (providerRecord.hasCache) {
             return providerRecord.cached as T;
@@ -78,12 +98,11 @@ export class InjectHolder {
         }
     }
 
-    private getOrCreateProviderRecord<T>(token: InjectionToken<T>): ProviderRecord<T> {
-        const existing = this.providerMap.get(token) as ProviderRecord<T> | undefined;
-        if (existing) {
-            return existing;
-        }
+    private getProviderRecord<T>(token: InjectionToken<T>): ProviderRecord<T> | undefined {
+        return this.providerMap.get(token) as ProviderRecord<T> | undefined;
+    }
 
+    private createAutoProviderRecord<T>(token: InjectionToken<T>): ProviderRecord<T> | null {
         if (this.isConstructable(token)) {
             const autoProvider: ProviderRecord<T> = {
                 provider: { useClass: token as Constructable<T>, singleton: true },
@@ -93,7 +112,7 @@ export class InjectHolder {
             return autoProvider;
         }
 
-        throw new Error(`No injectable found for token: ${this.describeToken(token)}`);
+        return null;
     }
 
     private instantiateProvider<T>(provider: Provider<T>): T {

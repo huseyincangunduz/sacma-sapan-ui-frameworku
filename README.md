@@ -250,9 +250,9 @@ import { Stateful } from "@ubs-platform/neolit/structural";
 
 ### Dependency Injection
 
-An Angular-style DI system with singleton caching and circular dependency detection.
+An Angular-style DI system with singleton caching, circular dependency detection, and hierarchical injectors.
 
-#### Registering services
+#### Registering services in root
 
 ```ts
 import { Injectable } from "@ubs-platform/neolit/injectables";
@@ -264,6 +264,28 @@ class LoggerService {
         console.log(message);
     }
 }
+```
+
+#### Registering services in a custom injector
+
+```ts
+import { Injectable, createInjector, rootInjector } from "@ubs-platform/neolit/injectables";
+
+const featureInjector = createInjector(rootInjector);
+
+@Injectable({ providedIn: featureInjector })
+class FeatureLogger {
+    log(message: string) {
+        console.log("[feature]", message);
+    }
+}
+```
+
+If declaration order is a concern, you can also pass a getter:
+
+```ts
+@Injectable({ providedIn: () => featureInjector })
+class FeatureLogger {}
 ```
 
 #### Injecting services
@@ -281,6 +303,12 @@ class MyComponent extends NeolitComponent {
 }
 ```
 
+You can also resolve against a specific injector:
+
+```ts
+const featureLogger = inject(FeatureLogger, featureInjector);
+```
+
 #### Registering arbitrary values
 
 ```ts
@@ -289,6 +317,18 @@ import axios from "axios";
 
 rootInjector.registerValue("http-client", axios.create({ baseURL: "/api" }));
 ```
+
+#### Creating child injectors
+
+```ts
+import { createInjector, rootInjector } from "@ubs-platform/neolit/injectables";
+
+const featureInjector = createInjector(rootInjector);
+
+featureInjector.registerValue("feature-id", "books");
+```
+
+Child injectors fall back to their parent when a token is not registered locally.
 
 #### Injecting non-class tokens
 
@@ -307,6 +347,19 @@ class ApiService {
 }
 ```
 
+#### Dynamic local injectors
+
+If you create injectors at runtime, prefer explicit registration over `providedIn`.
+
+```ts
+const localInjector = createInjector(rootInjector);
+localInjector.registerClass(ApiService, ApiService);
+
+const apiService = localInjector.resolve(ApiService);
+```
+
+This is usually a better fit for per-component, per-feature-instance, or per-request scopes.
+
 **Provider types:**
 
 | Type | Description |
@@ -314,6 +367,16 @@ class ApiService {
 | `useValue` | Register a plain value |
 | `useClass` | Register a class (instantiated on first resolve) |
 | `useFactory` | Register a factory function `(injector) => T` |
+
+**Scope options for `@Injectable`:**
+
+| Option | Description |
+|---|---|
+| `providedIn: "root"` | Registers into the global root injector |
+| `providedIn: injectorInstance` | Registers into a specific injector |
+| `providedIn: () => injectorInstance` | Lazily resolves the injector and registers there |
+
+`createInjector(parent)` creates a new injector with optional parent fallback.
 
 ---
 
