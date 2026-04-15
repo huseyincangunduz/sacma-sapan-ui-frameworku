@@ -37,7 +37,7 @@ export class BookList extends NeolitComponent {
         </button>
         <button onclick={() => this.setList("ALL")}>Tüm kitaplar</button>
 
-        {fromState(this.bookList).renderIf(() => (
+        {fromState(this.bookList.busy).renderIf(() => (
           <div
             className="h-full w-full opacity-50 bg-gray-500 flex items-center justify-center"
             style={{ position: "fixed", top: 0, left: 0 }}

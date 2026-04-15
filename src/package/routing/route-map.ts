@@ -1,92 +1,181 @@
-import { NeolitComponent } from "../core";
+import { NeolitNode } from "../core";
 
-interface UrlParameters {
+export interface UrlParameters {
     queryParameters: Record<string, string>;
     pathParameters: Record<string, string>;
+    childrenPath?: string;
 }
 
-interface PathSegment {
+export interface PathSegment {
     name: string;
     dynamic: boolean;
 }
 
 export interface RouteInfo {
     path: string;
-    componentFactory: (parameters: UrlParameters) => NeolitComponent;
+    componentFactory: (parameters: UrlParameters)  => NeolitNode;
     childRoutes?: RouteInfo[];
-    pathSegments?: PathSegment[]; // Populated internally for easier matching
+    pathSegments?: PathSegment[];
 }
 
 
 export interface RouteInfoInternal extends RouteInfo {
     path: string;
-    componentFactory: (parameters: UrlParameters) => NeolitComponent;
-    childRoutes?: RouteInfo[];
-    pathSegments: PathSegment[]; // Populated internally for easier matching
+    componentFactory: (parameters: UrlParameters) => NeolitNode;
+    childRoutes?: RouteInfoInternal[];
+    pathSegments: PathSegment[];
+}
+
+export interface RouteMatch {
+    route: RouteInfoInternal;
+    parameters: UrlParameters;
 }
 
 export class RouteMap {
     private routes: RouteInfoInternal[] = [];
 
-    registerRoute(path: string, componentFactory: (parameters: UrlParameters) => NeolitComponent) {
-        const pathSegments = path.split("/").filter(Boolean).map(segment => ({
-            name: segment,
-            dynamic: segment.startsWith(":")
-        }));
-        this.routes.push({ path, componentFactory, pathSegments });
+    constructor(initialRoutes?: RouteInfo[]) {
+        if (initialRoutes) {
+            this.routes = initialRoutes.map(route => this.createInternalRoute(route));
+        }
     }
 
-    getComponentForRoute(path: string): NeolitComponent | null {
-        // sondaki query parametrelerini ayır
-        const [pathWithoutQuery, queryString] = path.split("?");
-        const incomingPathSegments = pathWithoutQuery.split("/").filter(Boolean).map(segment => ({
-            name: segment,
-            dynamic: segment.startsWith(":")
-        }));
+    registerRoute(
+        path: string,
+        componentFactory: (parameters: UrlParameters) => NeolitNode,
+        childRoutes?: RouteInfo[]
+    ) {
+        this.routes.push(this.createInternalRoute({ path, componentFactory, childRoutes }));
+    }
 
-        const urlParameters: UrlParameters = {
-            queryParameters: {},
-            pathParameters: {}
-        };
+    getComponentForRoute(path: string, incomingParametersParent?: UrlParameters) : RouteMatch | null {
+        const [pathWithoutQuery, queryString = ""] = path.split("?");
+        const incomingPathSegments = this.parsePathSegments(pathWithoutQuery);
+        const baseParameters = this.createUrlParameters(incomingParametersParent, queryString);
+        const match = this.findMatch(this.routes, incomingPathSegments, baseParameters);
 
-        if (queryString) {
-            const queryParams = new URLSearchParams(queryString);
-            queryParams.forEach((value, key) => {
-                urlParameters.queryParameters[key] = value;
-            });
+        if (match) {
+            return match;
         }
 
-        for (const systemRoute of this.routes) {
-            // if (route.pathSegments.length !== incomingPathSegments.length) {
-            //     continue;
-            // }
-            // Eğer child rotalar varsa o kendi içinde de aynı işlemi yaparak devam etmesi lazım.
-            // Yani önce parent rotayı bulup sonra child rotaya bakması lazım.
+        return null;
+    }
 
-            let match = true;
-            for (let i = 0; i < incomingPathSegments.length; i++) {
-                // dinamik segmentler her zaman eşleşir, bu yüzden onları kontrol etmeden geçiyoruz. Ancak statik segmentler tam olarak eşleşmelidir.
-                // eğer son segment ise ve child route'lar varsa, parent rotanın son segmenti tam eşleşmek zorunda değil, çünkü child route'lar parent rotanın devamı olarak kabul edilir. Bu yüzden i == route.pathSegments.length - 1 && route.childRoutes kontrolünü ekliyoruz.
-                if (
-                    !systemRoute.pathSegments[i].dynamic &&
-                    (systemRoute.pathSegments[i].name !== incomingPathSegments[i].name ||
-                        i == systemRoute.pathSegments.length - 1 && systemRoute.childRoutes) // Eğer child route varsa, parent rotanın son segmenti tam eşleşmek zorunda değil
-                ) {
-                    match = false;
-                    break;
-                }
-                if (systemRoute.pathSegments[i].dynamic) {
-                    const paramName = systemRoute.pathSegments[i].name.slice(1);
-                    urlParameters.pathParameters[paramName] = incomingPathSegments[i].name;
-                }
-            }
+    private createInternalRoute(route: RouteInfo): RouteInfoInternal {
+        return {
+            ...route,
+            pathSegments: this.parsePathSegments(route.path).map(segment => ({
+                name: segment,
+                dynamic: segment.startsWith(":")
+            })),
+            childRoutes: route.childRoutes?.map(childRoute => this.createInternalRoute(childRoute))
+        };
+    }
 
-            if (match) {
-                return systemRoute.componentFactory(urlParameters);
+    private parsePathSegments(path: string): string[] {
+        return path.split("/").filter(Boolean);
+    }
+
+    private createUrlParameters(incomingParametersParent?: UrlParameters, queryString?: string): UrlParameters {
+        const parameters: UrlParameters = {
+            queryParameters: { ...(incomingParametersParent?.queryParameters ?? {}) },
+            pathParameters: { ...(incomingParametersParent?.pathParameters ?? {}) }
+        };
+
+        if (incomingParametersParent?.childrenPath) {
+            parameters.childrenPath = incomingParametersParent.childrenPath;
+        }
+
+        if (!queryString) {
+            return parameters;
+        }
+
+        const queryParams = new URLSearchParams(queryString);
+        queryParams.forEach((value, key) => {
+            parameters.queryParameters[key] = value;
+        });
+
+        return parameters;
+    }
+
+    private cloneUrlParameters(parameters: UrlParameters): UrlParameters {
+        return {
+            queryParameters: { ...parameters.queryParameters },
+            pathParameters: { ...parameters.pathParameters },
+            childrenPath: parameters.childrenPath
+        };
+    }
+
+    private findMatch(
+        routes: RouteInfoInternal[],
+        incomingPathSegments: string[],
+        baseParameters: UrlParameters
+    ): RouteMatch | null {
+        for (const route of routes) {
+            const matchedParameters = this.matchRoute(route, incomingPathSegments, baseParameters);
+
+            if (matchedParameters) {
+                return {
+                    route,
+                    parameters: matchedParameters
+                };
             }
         }
 
         return null;
+    }
+
+    private matchRoute(
+        route: RouteInfoInternal,
+        incomingPathSegments: string[],
+        baseParameters: UrlParameters
+    ): UrlParameters | null {
+        if (route.pathSegments.length > incomingPathSegments.length) {
+            return null;
+        }
+
+        const nextParameters = this.cloneUrlParameters(baseParameters);
+
+        for (let index = 0; index < route.pathSegments.length; index++) {
+            const routeSegment = route.pathSegments[index];
+            const incomingSegment = incomingPathSegments[index];
+
+            if (!incomingSegment) {
+                return null;
+            }
+
+            if (routeSegment.dynamic) {
+                nextParameters.pathParameters[routeSegment.name.slice(1)] = incomingSegment;
+                continue;
+            }
+
+            if (routeSegment.name !== incomingSegment) {
+                return null;
+            }
+        }
+
+        const remainingSegments = incomingPathSegments.slice(route.pathSegments.length);
+
+        if (remainingSegments.length === 0) {
+            delete nextParameters.childrenPath;
+            return nextParameters;
+        }
+
+        if (!route.childRoutes || route.childRoutes.length === 0) {
+            return null;
+        }
+
+        const childrenPath = remainingSegments.join("/");
+        const childMatch = this.findMatch(route.childRoutes, remainingSegments, nextParameters);
+
+        if (!childMatch) {
+            return null;
+        }
+
+        return {
+            ...childMatch.parameters,
+            childrenPath
+        };
     }
 
 }

@@ -1,15 +1,11 @@
-import { getStateValue, isState, NeolitChild, NeolitComponent, NeolitNode, State, StateOrPlain } from "@ubs-platform/neolit/core";
+import {  getStateValue, isState, NeolitChild, NeolitComponent, NeolitNode, State, StateOrPlain } from "@ubs-platform/neolit/core";
 
 type ComponentConstructor = new (props?: Record<string, any>) => NeolitComponent;
 type Tag = string | ComponentConstructor;
 type Props = Record<string, unknown> | null;
 
-export interface ComponentRenderResult {
-    componentInstance: NeolitComponent;
-    element: NeolitNode | NeolitNode[];
-}
 
-type JsxChild = NeolitChild | ComponentRenderResult;
+type JsxChild = NeolitChild | NeolitComponent;
 
 // --- State binding helpers ---
 
@@ -51,16 +47,15 @@ function normalizeChild(child: NeolitChild): Node {
     return child as Node;
 }
 
-function isComponentRenderResult(value: JsxChild): value is ComponentRenderResult {
-    return typeof value === "object"
-        && value !== null
-        && "componentInstance" in value
-        && "element" in value;
-}
+// function isComponentRenderResult(value: JsxChild): value is ComponentRenderResult {
+//     return typeof value === "object"
+//         && value !== null
+//         && "componentInstance" in value
+// }
 
 function appendJsxChild(parent: HTMLElement, child: JsxChild): void {
-    if (isComponentRenderResult(child)) {
-        child.componentInstance.mount(parent, child.element);
+    if (child instanceof NeolitComponent) {
+        child.mount(parent);
         return;
     }
     if (Array.isArray(child)) {
@@ -74,7 +69,7 @@ function appendJsxChildOrFunction(parent: HTMLElement, child: JsxChild | (() => 
     if (typeof child === "function") {
         const result = (child as () => JsxChild)();
         if (result instanceof NeolitComponent) {
-            appendJsxChild(parent, { componentInstance: result, element: result.render() });
+            appendJsxChild(parent, result);
         } else {
             console.warn("JSX child function must return a NeolitComponent instance. Got:", result);
         }
@@ -121,14 +116,14 @@ function applyProps(el: HTMLElement, attrs: Record<string, unknown>): void {
 
 // --- JSX factory ---
 
-export function jsx(tag: ComponentConstructor, props: Props & { children?: JsxChild[] | JsxChild }): ComponentRenderResult;
+export function jsx(tag: ComponentConstructor, props: Props & { children?: JsxChild[] | JsxChild }): NeolitComponent;
 export function jsx(tag: string, props: Props & { children?: JsxChild[] | JsxChild }): HTMLElement;
-export function jsx(tag: Tag, props: Props & { children?: JsxChild[] | JsxChild }): ComponentRenderResult | HTMLElement {
+export function jsx(tag: Tag, props: Props & { children?: JsxChild[] | JsxChild }): NeolitComponent | HTMLElement {
     const { children, ...attrs } = props ?? {};
 
     if (typeof tag === "function") {
         const instance = new tag(props);
-        return { componentInstance: instance, element: instance.render() };
+        return instance;
     }
 
     const el = document.createElement(tag);

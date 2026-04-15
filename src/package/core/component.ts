@@ -12,10 +12,9 @@ export abstract class NeolitComponent {
     constructor(_properties?: Record<string, any>, key?: string) {
         this.key = key ?? Math.random().toString(36).substring(2, 9);
         NeolitComponent.componentInstances.set(this.key, this);
-        console.log("NeolitComponent created");
     }
 
-    abstract render(): NeolitNode | NeolitNode[];
+    abstract render(): NeolitNode | NeolitNode[] | NeolitComponent | null;
 
     watchToRerender<T>(state: State<T>): void {
         const listener = () => this._rerender();
@@ -34,19 +33,28 @@ export abstract class NeolitComponent {
         NeolitComponent.componentInstances.delete(this.key);
     }
 
-    mount(target: HTMLElement, initialElement?: NeolitNode | NeolitNode[]): NeolitNode | NeolitNode[] | null {
+    mount(target: HTMLElement): NeolitNode | NeolitNode[] | null {
 
         this._mountTarget = target;
         target.attributes.setNamedItem(document.createAttribute("data-neolit-mounted"));
         target.setAttribute("data-neolit-key", this.key);
 
-        const currentEls = initialElement ?? this.render();
+        let currentEls = this.render();
 
+        // Eğer currentEls bir NeolitComponent ise, componentInstance'ın render metodunu çağırarak gerçek elementleri elde edelim.
+        while (currentEls && currentEls instanceof NeolitComponent) {
+            currentEls = currentEls.render();
+        }
         // Eğer initialElement sağlanmışsa ve sonradan render edilen elementin tipi initialElement ile uyuşmuyorsa, bu durumun render işlemi üzerinde sorunlara yol açabileceği konusunda bir uyarı verelim.
-        if (this._currentElement != null && typeof initialElement !== typeof currentEls) {
+        if (this._currentElement != null && typeof currentEls !== typeof this._currentElement) {
             console.error("NEOLIT : Initial element type does not match rendered element type. This may cause issues with rendering. Please ensure that the initial element and rendered element are of the same type (either both should be NeolitNode or both should be NeolitNode[]).");
         }
-        this._currentElement = currentEls;
+        if (this._currentElement && this._currentElement instanceof NeolitComponent) {
+            console.warn("NEOLIT : Detected a component instance in the rendered output. This may indicate that a component is being returned directly from the render method instead of its rendered output. Please ensure that the render method returns the output of the component's render method, not the component instance itself.");
+
+        }
+        // Artık component render result'ı işlenmiş olduğundan, currentEls'in NeolitNode veya NeolitNode[] olduğunu varsayabiliriz.
+        this._currentElement = currentEls as NeolitNode | NeolitNode[] | null;
 
         if (!Array.isArray(this._currentElement)) {
 
@@ -68,8 +76,11 @@ export abstract class NeolitComponent {
 
     private _rerender(): void {
         if (!this._mountTarget || !this._currentElement) return;
-        const newElement = this.render();
-
+        let newElement = this.render();
+        // Eğer currentEls bir NeolitComponent ise, componentInstance'ın render metodunu çağırarak gerçek elementleri elde edelim.
+        if (newElement && newElement instanceof NeolitComponent) {
+            newElement = newElement.render();
+        }
         if (Array.isArray(this._currentElement)) {
             this._currentElement.forEach(el => {
                 if (el.parentNode === this._mountTarget) {
@@ -90,7 +101,7 @@ export abstract class NeolitComponent {
                 this._mountTarget.replaceChild(newElement as Node, this._currentElement as Node);
             }
         }
-        this._currentElement = newElement;
+        this._currentElement = newElement as NeolitNode | NeolitNode[] | null;
     }
 
     public rerender(): void {
