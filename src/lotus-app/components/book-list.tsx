@@ -36,8 +36,12 @@ export class BookList extends NeolitComponent {
           Registered kitapları
         </button>
         <button onclick={() => this.setList("ALL")}>Tüm kitaplar</button>
+        
+        {fromState(this.bookList.errorObject).renderIf((error) => (
+          <div style={{ color: "red" }}>Hata: {error.message}</div>
+        ))}
 
-        {fromState(this.bookList).renderIf(() => (
+        {fromState(this.bookList.busy).renderIf(() => (
           <div
             className="h-full w-full opacity-50 bg-gray-500 flex items-center justify-center"
             style={{ position: "fixed", top: 0, left: 0 }}

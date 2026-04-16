@@ -27,13 +27,13 @@ export class FromState {
         });
     }
 
-    renderIf(renderItem: () => NeolitNode,): (() => If) & { else: (elseRenderItem: () => NeolitNode) => (() => If) } {
+    renderIf<T = any>(renderItem: (stateValue: T) => NeolitNode,): (() => If) & { else: (elseRenderItem: () => NeolitNode) => (() => If) } {
 
         const fn = () => {
 
             return new If({
                 condition: this.state,
-                children: () => renderItem(),
+                children: () => renderItem(this.state.get()),
                 elseChildren: this._elseChildren,
             });
         }
