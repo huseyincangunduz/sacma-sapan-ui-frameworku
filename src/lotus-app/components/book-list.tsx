@@ -37,7 +37,7 @@ export class BookList extends NeolitComponent {
         </button>
         <button onclick={() => this.setList("ALL")}>Tüm kitaplar</button>
         
-        {fromState(this.bookList.errorObject).renderIf((error) => (
+        {fromState(this.bookList.error).renderIf((error) => (
           <div style={{ color: "red" }}>Hata: {error.message}</div>
         ))}
 
