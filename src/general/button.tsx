@@ -1,3 +1,4 @@
+// import "./button.css";
 import { NeolitComponent, StateOrPlain } from "@ubs-platform/neolit/core";
 export interface ButtonProperties {
   onclick: (e: MouseEvent) => void;
