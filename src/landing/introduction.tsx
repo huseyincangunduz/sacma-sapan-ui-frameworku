@@ -22,21 +22,21 @@ export class Introduction extends NeolitComponent {
       summary: "Reaktif veriyi tutar ve set/update ile güncellenir.",
     },
     {
-      title: "watchToRerender",
-      signature: "this.watchToRerender(count)",
-      summary:
-        "Bir state değiştiğinde bileşeni otomatik tekrar render eder. Ama buna ihtiyacınız olmamasını umuyoruz, çünkü manuel kontrol genellikle daha performanslıdır.",
-    },
-    {
       title: "Stateful",
-      signature: "<Stateful state={visible}>{() => ...}</Stateful>",
+      signature: "fromState(flag).stateful(() => <A flag={flag} />)",
       summary:
         "Yalnızca ilgili alt bloğu yeniden çizerek daha verimli günceller.",
     },
     {
       title: "For",
-      signature: "<For items={items}>{(item) => <li>{item}</li>}</For>",
+      signature: "fromState(items).renderFor(item => <li>{item}</li>)",
       summary: "Dinamik listeleri state üzerinden yönetir ve render eder.",
+    },
+    {
+      title: "watchToRerender",
+      signature: "this.watchToRerender(count)",
+      summary:
+        "Eğer akıcı structural API yeterli gelmediyse manuel olarak bileşeni yeniden render etmeye yarar. Ancak buna ihtiyacınız olmamasını umuyoruz :)",
     },
   ]);
 
@@ -73,10 +73,11 @@ export class Introduction extends NeolitComponent {
                   Neolit ile modern, yalın ve hızlı UI geliştirme
                 </h1>
                 <p className="max-w-3xl text-base leading-7 text-slate-600 sm:text-lg">
-                  Bu sayfa, doğrudan package API'lerinden gelen yapı taşlarını
-                  ve test klasöründeki gerçek örnek bileşenleri bir araya
-                  getirir. Minimal sınıf tabanlı bir yaklaşımla, reaktif state
-                  ve yapısal render yardımcılarını tek noktada görebilirsin.
+                  Neolit ile tanışın: Modern web uygulamaları için yalın,
+                  performans odaklı ve geliştirici dostu bir UI framework.
+                  İhtiyacınıza göre render kontrolü, reaktif state yönetimi ve
+                  esnek yapısıyla, hızlı ve etkili kullanıcı arayüzleri
+                  oluşturmanızı sağlar.
                 </p>
               </div>
 
@@ -288,7 +289,6 @@ export class Introduction extends NeolitComponent {
             ))}
           </section> */}
         </main>
-
       </div>
     );
   }
