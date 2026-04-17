@@ -4,6 +4,7 @@ export interface UrlParameters {
     queryParameters: Record<string, string>;
     pathParameters: Record<string, string>;
     childrenPath?: string;
+    
 }
 
 export interface PathSegment {
@@ -16,6 +17,8 @@ export interface RouteInfo {
     componentFactory: (parameters: UrlParameters)  => NeolitNode;
     childRoutes?: RouteInfo[];
     pathSegments?: PathSegment[];
+    // Eğer false ya da string dönerse, yönlendirme engellenir. String dönerse bu string'e yönlendirilir.
+    canActivate?: (parameters: UrlParameters) => boolean | string | Promise<boolean | string>;
 }
 
 
@@ -24,6 +27,7 @@ export interface RouteInfoInternal extends RouteInfo {
     componentFactory: (parameters: UrlParameters) => NeolitNode;
     childRoutes?: RouteInfoInternal[];
     pathSegments: PathSegment[];
+    canActivate?: (parameters: UrlParameters) => boolean | string | Promise<boolean | string>;
 }
 
 export interface RouteMatch {
@@ -48,13 +52,24 @@ export class RouteMap {
         this.routes.push(this.createInternalRoute({ path, componentFactory, childRoutes }));
     }
 
-    getComponentForRoute(path: string, incomingParametersParent?: UrlParameters) : RouteMatch | null {
+    async getComponentForRoute(path: string, incomingParametersParent?: UrlParameters) : Promise<RouteMatch | null> {
         const [pathWithoutQuery, queryString = ""] = path.split("?");
         const incomingPathSegments = this.parsePathSegments(pathWithoutQuery);
         const baseParameters = this.createUrlParameters(incomingParametersParent, queryString);
-        const match = this.findMatch(this.routes, incomingPathSegments, baseParameters);
+        const match = await this.findMatch(this.routes, incomingPathSegments, baseParameters);
 
         if (match) {
+            if (match.route.canActivate) {
+                const canActivateResult = await match.route.canActivate(match.parameters);
+
+                if (typeof canActivateResult === "string") {
+                    return this.getComponentForRoute(canActivateResult);
+                }
+
+                if (canActivateResult === false) {
+                    return null;
+                }
+            }
             return match;
         }
 
@@ -106,13 +121,13 @@ export class RouteMap {
         };
     }
 
-    private findMatch(
+    private async findMatch(
         routes: RouteInfoInternal[],
         incomingPathSegments: string[],
         baseParameters: UrlParameters
-    ): RouteMatch | null {
+    ): Promise<RouteMatch | null> {
         for (const route of routes) {
-            const matchedParameters = this.matchRoute(route, incomingPathSegments, baseParameters);
+            const matchedParameters = await this.matchRoute(route, incomingPathSegments, baseParameters);
 
             if (matchedParameters) {
                 return {
@@ -125,11 +140,11 @@ export class RouteMap {
         return null;
     }
 
-    private matchRoute(
+    private async matchRoute(
         route: RouteInfoInternal,
         incomingPathSegments: string[],
         baseParameters: UrlParameters
-    ): UrlParameters | null {
+    ): Promise<UrlParameters | null> {
         if (route.pathSegments.length > incomingPathSegments.length) {
             return null;
         }
@@ -166,7 +181,7 @@ export class RouteMap {
         }
 
         const childrenPath = remainingSegments.join("/");
-        const childMatch = this.findMatch(route.childRoutes, remainingSegments, nextParameters);
+        const childMatch = await this.findMatch(route.childRoutes, remainingSegments, nextParameters);
 
         if (!childMatch) {
             return null;

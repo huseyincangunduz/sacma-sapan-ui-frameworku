@@ -1,4 +1,4 @@
-import { State, state } from "../core";
+import { AsyncState, asyncState, State, state } from "../core";
 import { RouteMap, RouteMatch } from "./route-map";
 
 export interface RouterOptions {
@@ -9,7 +9,7 @@ export interface RouterOptions {
 export class Router {
     readonly routeMap: RouteMap;
     readonly pathState: State<string>;
-    readonly activeRouteState: State<RouteMatch | null>;
+    readonly activeRouteState: AsyncState<RouteMatch | null> = asyncState<RouteMatch | null>(Promise.resolve(null));
     private readonly popStateHandler: () => void;
 
     constructor({ routeMap, initialPath }: RouterOptions) {
@@ -17,12 +17,19 @@ export class Router {
 
         const resolvedInitialPath = initialPath ?? this.getCurrentBrowserPath();
         this.pathState = state(resolvedInitialPath);
-        this.activeRouteState = state(this.routeMap.getComponentForRoute(resolvedInitialPath));
+
         this.popStateHandler = () => {
             this.sync(this.getCurrentBrowserPath());
         };
 
         window.addEventListener("popstate", this.popStateHandler);
+        this.activatedRouteWork(resolvedInitialPath).then(() => {
+            // No-op, just to ensure the initial route is processed.
+        });
+    }
+
+    private async activatedRouteWork(resolvedInitialPath: string) {
+        this.activeRouteState.setAsync(this.routeMap.getComponentForRoute(resolvedInitialPath));
     }
 
     navigate(path: string): void {
@@ -35,9 +42,9 @@ export class Router {
         this.sync(path);
     }
 
-    sync(path: string): void {
+    async sync(path: string): Promise<void> {
         this.pathState.set(path);
-        this.activeRouteState.set(this.routeMap.getComponentForRoute(path));
+        this.activeRouteState.setAsync(this.routeMap.getComponentForRoute(path));
     }
 
     destroy(): void {

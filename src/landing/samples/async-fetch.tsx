@@ -45,6 +45,8 @@ export class AsyncFetch extends NeolitComponent {
   }
 
   render(): NeolitNode {
+
+    
     return (
       <div>
         {/* Durumlar */}
