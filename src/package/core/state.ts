@@ -13,13 +13,25 @@ export class State<DATA> {
         return this.data;
     }
 
-    set(newData: DATA): void {
+    set(_newData: DATA | State<DATA>): void {
         const oldValue = this.data;
+        const newData = _newData instanceof State ? _newData.get() : _newData;
         const triggerFlag = this.determineTriggerIsRequired(newData);
         this.data = newData;
 
         if (triggerFlag) {
-            this.changeListeners.forEach(listener => listener(newData, oldValue));
+            this.changeListeners.forEach(listener => listener(this.data, oldValue));
+        }
+
+        if (_newData instanceof State) {
+            _newData.subscribe((newData) => {
+                const triggerFlag = this.determineTriggerIsRequired(newData);
+                this.data = newData;
+
+                if (triggerFlag) {
+                    this.changeListeners.forEach(listener => listener(this.data, oldValue));
+                }
+            });
         }
     }
 
