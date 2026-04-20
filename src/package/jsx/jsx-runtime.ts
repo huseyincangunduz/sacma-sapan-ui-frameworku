@@ -13,7 +13,14 @@ function bindToStateOrPlain(element: HTMLElement, stateOrPlain: StateOrPlain<any
     if (isState(stateOrPlain)) {
         const cb = () => callback(getStateValue(stateOrPlain));
         stateOrPlain.subscribe(cb);
-        callback(getStateValue(stateOrPlain));
+        callback(getStateValue(stateOrPlain)); 
+        // const orginialRemoveChild = element.removeChild
+        // element.removeChild = function(child) {
+        //     if (child instanceof Text && child.textContent === String(getStateValue(stateOrPlain))) {
+        //         stateOrPlain.unsubscribe(cb);
+        //     }
+        //     return orginialRemoveChild.call(this, child);
+        // }
         element.addEventListener("close", () => stateOrPlain.unsubscribe(cb));
     } else {
         callback(stateOrPlain);
@@ -28,6 +35,10 @@ function setAttributeWithStateSupport(element: HTMLElement, attributeKey: string
 
 function setStyleWithStateSupport(element: HTMLElement, styleKey: string, stateOrPlainValue: StateOrPlain<any>): void {
     bindToStateOrPlain(element, stateOrPlainValue, (value) => {
+        if (styleKey.startsWith("--")) {
+            element.style.setProperty(styleKey, String(value));
+            return;
+        }
         Object.assign(element.style, { [styleKey]: value });
     });
 }
@@ -96,9 +107,10 @@ function applyClassName(el: HTMLElement, value: unknown): void {
         // TODO: value bir state ise veya value bir state değilse ama değeri boolean ise,
         // classKey'i ekle veya çıkar. Yani classValue true ise classKey'i ekle, false ise classKey'i çıkar.
         for (const [classKey, classValue] of Object.entries(value!)) {
-            el.classList.toggle(classKey, !!getStateValue(classValue));
+            bindToStateOrPlain(el, classValue as StateOrPlain<any>, (v) => {
+                el.classList.toggle(classKey, !!v);
+            });
         }
-        setAttributeWithStateSupport(el, "class", value);
     } else {
         setAttributeWithStateSupport(el, "class", value);
     }
@@ -120,7 +132,7 @@ function applyProps(el: HTMLElement, attrs: Record<string, unknown>): void {
                 (el as HTMLInputElement)[key as "value" | "checked"] = v as never;
             });
         }
-        
+
         else {
             setAttributeWithStateSupport(el, key, value);
         }

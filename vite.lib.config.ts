@@ -16,6 +16,7 @@ export default defineConfig({
     build: {
         outDir: "dist/lib",
         emptyOutDir: true,
+        minify: false,
         lib: {
             entry: {
                 core: path.resolve(__dirname, "src/package/core/index.ts"),
