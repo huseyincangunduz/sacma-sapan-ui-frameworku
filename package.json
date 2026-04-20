@@ -1,6 +1,6 @@
 {
   "name": "@ubs-platform/neolit",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "description": "A lightweight declarative UI framework with fine-grained state updates.",
   "type": "module",
   "repository": {
@@ -59,6 +59,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.15.0",
+    "material-symbols": "^0.44.2",
     "tailwindcss": "^4.2.2"
   }
 }
