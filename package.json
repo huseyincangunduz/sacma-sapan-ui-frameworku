@@ -1,6 +1,6 @@
 {
   "name": "@ubs-platform/neolit",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A lightweight declarative UI framework with fine-grained state updates.",
   "type": "module",
   "repository": {
