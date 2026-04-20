@@ -4,7 +4,10 @@ export class State<DATA> {
     private data: DATA;
 
     changeListeners: Array<(newData: DATA, oldData?: DATA) => void> = [];
-    stateTwoBind?: State<DATA> | null = null;
+    boundState?: State<DATA> | null = null;
+    boundingStateSubscription: (data: DATA) => void = () => { };
+    notifyIncoming: boolean = false;
+    // stateTwoBind?: State<DATA> | null = null;
 
     constructor(initialData: DATA) {
         this.data = initialData;
@@ -18,7 +21,7 @@ export class State<DATA> {
      * Sets the state to a new value. If the new value is different from the current value, it triggers change listeners.
      * @param _newData The new state value or another State instance to derive the value from.
      */
-    set(_newData: DATA): void {
+    set(_newData: DATA | State<DATA>, { subscribeIncoming, notifyIncoming } = { subscribeIncoming: false, notifyIncoming: false }): void {
         const oldValue = this.data;
         const newData = _newData instanceof State ? _newData.get() : _newData;
         const triggerFlag = this.determineTriggerIsRequired(newData);
@@ -27,31 +30,38 @@ export class State<DATA> {
         if (triggerFlag) {
             this.changeListeners.forEach(listener => listener(this.data, oldValue));
         }
-        if (this.stateTwoBind) {
-            this.stateTwoBind.set(this.data);
-        }
-    }
 
-    clearTwoWayBinding(): void {
-        if (this.stateTwoBind) {
-            this.stateTwoBind.stateTwoBind = null;
-            this.stateTwoBind = null;
-        }
-    }
 
-    setTwoWay(newState: State<DATA>): void {
-        this.set(newState.get());
-        this.stateTwoBind = newState;
-        newState.subscribe((newData) => {
-            const triggerFlag = this.determineTriggerIsRequired(newData);
-            this.data = newData;
-
-            if (triggerFlag) {
-                this.changeListeners.forEach(listener => listener(this.data, newData));
+        if (_newData instanceof State) {
+            // Eski bağı sil
+            this.boundState?.unsubscribe(this.boundingStateSubscription);
+            // Eğer gelen state güncellenirse ve subscribeIncoming etkinse bu state ile onunla beraber güncellenecek
+            if (subscribeIncoming) {
+                this.boundingStateSubscription = (newData) => {
+                    this.set(newData);
+                };
+                _newData.subscribe(this.boundingStateSubscription);
             }
-        });
-        newState.stateTwoBind = this;
+            this.notifyIncoming = notifyIncoming;
+
+            this.boundState = _newData;
+
+            // Eğer bu state güncellenirse ve notifyIncoming true ise gelen state güncellenecek
+        } else if (this.boundState && this.notifyIncoming) {
+            this.boundState.set(this.data);
+        }
+
     }
+
+    // Eğer state bir başka state'e bağlıysa, bu bağlantıyı kaldırır. Bu, iki state'in birbirini güncellemesini durdurur.
+    unbound(): void {
+        if (this.boundState) {
+            this.boundState.unsubscribe(this.boundingStateSubscription);
+            this.boundState = null;
+            this.notifyIncoming = false;
+        }
+    }
+
 
     determineTriggerIsRequired(newData: DATA) {
         return (typeof newData === "object" || Array.isArray(newData)) || this.data !== newData;
@@ -80,7 +90,8 @@ export class State<DATA> {
         this.changeListeners.push(listener);
     }
 
-    unsubscribe(listener: (newData: DATA, oldData?: DATA) => void): void {
+    unsubscribe(listener: null | undefined | ((newData: DATA, oldData?: DATA) => void)): void {
+        if (!listener) return;
         const index = this.changeListeners.indexOf(listener);
         if (index !== -1) {
             this.changeListeners.splice(index, 1);
