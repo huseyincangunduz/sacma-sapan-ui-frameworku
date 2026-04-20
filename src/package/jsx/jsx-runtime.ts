@@ -1,4 +1,4 @@
-import { getStateValue, isState, NeolitChild, NeolitComponent, State, StateOrPlain } from "@ubs-platform/neolit/core";
+import { computed, getStateValue, isState, NeolitChild, NeolitComponent, State, StateOrPlain } from "@ubs-platform/neolit/core";
 
 type ComponentConstructor = new (props?: Record<string, any>) => NeolitComponent;
 type Tag = string | ComponentConstructor;
@@ -95,8 +95,8 @@ function toChildArray(children: JsxChild[] | JsxChild | undefined): (JsxChild | 
 
 // --- Prop helpers ---
 
-function applyClassName(el: HTMLElement, value: unknown): void {
-    if (typeof value === "object" && !isState(value)) {
+function applyClassName(el: HTMLElement, value: StateOrPlain<any> | Record<string, StateOrPlain<any>> | (StateOrPlain<any>)[]): void {
+    if (typeof value === "object" && !(value instanceof Array) && !isState(value)) {
         // TODO: value bir state ise veya value bir state değilse ama değeri boolean ise,
         // classKey'i ekle veya çıkar. Yani classValue true ise classKey'i ekle, false ise classKey'i çıkar.
         for (const [classKey, classValue] of Object.entries(value!)) {
@@ -105,6 +105,10 @@ function applyClassName(el: HTMLElement, value: unknown): void {
                 el.classList.toggle(classKey, !!v);
             });
         }
+    } else if (value instanceof Array && !isState(value)) {
+        const statesListened = value.filter(isState);
+        const classNamesComputed = computed(statesListened, () => value.filter(v => !!v).map((v) => getStateValue(v)).join(" "))
+        setAttributeWithStateSupport(el, "class", classNamesComputed);
     } else {
         setAttributeWithStateSupport(el, "class", value);
     }
