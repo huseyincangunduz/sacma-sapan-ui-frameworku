@@ -31,7 +31,7 @@ export class App extends NeolitComponent {
         <div className="bg-gray-800 text-white p-4 gap-2 w-full flex items-center">
           <div className="flex justify-between items-center w-full">
             <div className="flex items-center">
-              <imgflatpak update
+              <img update
                 src="assets/logo.svg"
                 alt="Logo"
                 className="h-8 inline-block mr-4"
