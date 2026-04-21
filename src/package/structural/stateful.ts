@@ -9,7 +9,7 @@ import {
 } from "../core";
 
 export interface StatefulProperties<T> {
-  state: StateOrPlain<T>;
+  state: State<T>;
   children: (data: T) => NeolitNode | NeolitNode[];
 }
 /**
@@ -19,10 +19,9 @@ export interface StatefulProperties<T> {
  */
 export class Stateful<T> extends NeolitComponent<StatefulProperties<T>> {
   public properties = {
-    state: state<T>(null as T),
     children: () =>
       document.createComment("Stateful children") as unknown as NeolitNode,
-  } as StatefulProperties<T>;
+  } as Partial<StatefulProperties<T>>;
 
   onInit(): void {
     if (isState(this.properties.state)) {
@@ -32,6 +31,9 @@ export class Stateful<T> extends NeolitComponent<StatefulProperties<T>> {
 
   render(): NeolitNode | NeolitNode[] {
     // TODO: Burada child'i direkt render edecek. her condition state'i güncellendiğinde içerisindeki child render edilecek. bu sayede condition state'i güncellendiğinde sadece child render edilecek, tüm component değil.
-    return this.properties.children?.(getStateValue(this.properties.state));
+    return (
+      this.properties.children?.(getStateValue(this.properties.state!)) ||
+      (document.createComment("Stateful children") as unknown as NeolitNode)
+    );
   }
 }

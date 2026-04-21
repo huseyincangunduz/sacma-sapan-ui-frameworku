@@ -1,4 +1,4 @@
-import { getStateValue, NeolitNode, State } from "../core";
+import { getStateValue, NeolitComponent, NeolitNode, State } from "../core";
 import { For } from "./forloop";
 import { If } from "./ifblock";
 import { Stateful } from "./stateful";
@@ -24,14 +24,11 @@ export class FromState {
     renderItem: (item: T, index: number) => NeolitNode,
   ): () => For<T> {
     return () => {
-      const forComp = new For();
-      forComp.assignProperties({
+      return NeolitComponent.constructInitialize(For<T>, {
         items: this.state,
         keyFn: this._keyFn,
         children: (item, index) => renderItem(item as T, index),
-      });
-
-      return forComp;
+      }) as For<T>;
     };
   }
 
@@ -39,11 +36,11 @@ export class FromState {
     renderItem: (stateValue: T) => NeolitNode,
   ): (() => If) & { else: (elseRenderItem: () => NeolitNode) => () => If } {
     const fn = () => {
-      const ifComp = new If();
-      ifComp.properties.condition = this.state as State<boolean>;
-      ifComp.properties.children = () => renderItem(getStateValue(this.state));
-      ifComp.properties.elseChildren = this._elseChildren;
-      return ifComp;
+      return NeolitComponent.constructInitialize(If, {
+        condition: this.state as State<boolean>,
+        children: () => renderItem(getStateValue(this.state)),
+        elseChildren: this._elseChildren,
+      }) as If;
     };
 
     fn["else"] = (elseRenderItem: () => NeolitNode) => {
@@ -56,12 +53,10 @@ export class FromState {
 
   stateful<T = any>(renderItem: (data: T) => NeolitNode): () => Stateful<T> {
     return () => {
-      const statefulComp = new Stateful<T>();
-      statefulComp.assignProperties({
+      return NeolitComponent.constructInitialize(Stateful<T>, {
         state: this.state,
-        children: () => renderItem(getStateValue(this.state)),
-      });
-      return statefulComp;
+        children: (data: T) => renderItem(data),
+      }) as Stateful<T>;
     };
   }
 }

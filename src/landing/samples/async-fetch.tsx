@@ -17,10 +17,6 @@ export class AsyncFetch extends NeolitComponent {
     null,
   );
 
-  constructor() {
-    super();
-  }
-
   startFail(): void {
     this.asyncData.setAsync(
       new Promise<string>((_resolve, reject) =>
@@ -49,6 +45,7 @@ export class AsyncFetch extends NeolitComponent {
 
     return (
       <div>
+        <div>{this.asyncData.busy}</div>
         {/* Durumlar */}
         <Stateful state={allIn}>
           {(values: {

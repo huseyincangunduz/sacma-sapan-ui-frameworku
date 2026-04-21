@@ -8,10 +8,6 @@ export class HelloWorld extends NeolitComponent {
 
   name = state("Dünya");
 
-  constructor() {
-    super();
-  }
-
   askUsersName() {
     const userName = prompt("Adınız nedir?");
     if (userName) {

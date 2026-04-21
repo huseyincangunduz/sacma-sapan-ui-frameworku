@@ -158,4 +158,14 @@ export abstract class NeolitComponent<PROPERTIES = Record<string, any>> {
   public rerender(): void {
     this._rerender();
   }
+
+  static constructInitialize<T>(
+    cpClass: new () => NeolitComponent<T>,
+    properties: T,
+  ) {
+    const instance = new cpClass();
+    instance.assignProperties(properties);
+    instance.onInit?.();
+    return instance;
+  }
 }

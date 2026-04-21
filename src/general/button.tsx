@@ -1,4 +1,9 @@
-import { NeolitComponent, StateOrPlain } from "@ubs-platform/neolit/core";
+import {
+  computed,
+  NeolitComponent,
+  state,
+  StateOrPlain,
+} from "@ubs-platform/neolit/core";
 export interface ButtonProperties {
   onclick: (e: MouseEvent) => void;
   children?: any;
@@ -6,17 +11,19 @@ export interface ButtonProperties {
 }
 export class Button extends NeolitComponent<ButtonProperties> {
   properties = {
-    disabled: false,
+    disabled: state(false),
     children: null,
     onclick: () => {},
-  }
+  };
 
   render() {
     return (
       <button
         className="px-4 py-2 bg-blue-500 text-white rounded"
         onClick={this.properties.onclick}
-        disabled={this.properties.disabled }
+        disabled={computed([this.properties.disabled], ([a]) => {
+          return a ? "disabled" : undefined;
+        })}
       >
         {this.properties.children}
       </button>

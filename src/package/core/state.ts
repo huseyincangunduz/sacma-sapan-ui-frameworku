@@ -31,6 +31,9 @@ export class State<DATA> {
       console.warn("State is set to itself");
       return;
     }
+    if (this.data === _newData) {
+      return;
+    }
 
     const oldValue = this.data;
     const newData = _newData instanceof State ? _newData.get() : _newData;
@@ -335,10 +338,10 @@ export class AsyncState<T> extends State<T> {
     busy: boolean;
     error: Error | null;
   }> {
-    return computed([this, this.busy, this.error], () => ({
-      data: this.busy.get() ? (this.initialData as T) : this.get(),
-      busy: this.busy.get(),
-      error: this.error.get(),
+    return computed([this, this.busy, this.error], ([data, busy, error]) => ({
+      data: busy ? (this.initialData as T) : data,
+      busy: busy,
+      error: error,
     }));
   }
 }

@@ -6,15 +6,9 @@ export interface IfBlockProperties {
 }
 
 export class If extends NeolitComponent {
-  // condition: StateOrPlain<boolean>;
-  // children: () => NeolitNode | NeolitNode[];
   elseChildren?: () => NeolitNode | NeolitNode[];
 
-  constructor() {
-    super();
-    // this.children = children;
-    // this.condition = condition;
-    // this.elseChildren = elseChildren;
+  onInit(): void {
     this.watchToRerender(this.properties.condition);
   }
 
