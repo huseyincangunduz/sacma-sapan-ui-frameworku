@@ -3,11 +3,9 @@ import {
   isState,
   NeolitComponent,
   NeolitNode,
-  state,
   State,
-  StateOrPlain,
 } from "../core";
-
+// TS6133 derdini s..eyim
 export interface StatefulProperties<T> {
   state: State<T>;
   children: (data: T) => NeolitNode | NeolitNode[];
