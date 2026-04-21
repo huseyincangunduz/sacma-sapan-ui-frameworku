@@ -1,4 +1,4 @@
-import { NeolitNode, NeolitComponent, state } from "@ubs-platform/neolit/core";
+import { NeolitNode, NeolitComponent } from "@ubs-platform/neolit/core";
 import { HelloWorld } from "./hello-world";
 import { TodoList } from "./todo-list";
 import { IncreaseCounter } from "./increase-counter";
@@ -27,7 +27,8 @@ export class SampleListPage extends NeolitComponent {
       name: "Normal input kullanarak Yapılacaklar Listesi",
       description:
         "Basit bir yapılacaklar listesi örneği. Kullanıcıdan yapılacaklar listesini girmesini istiyor ve ardından listeyi güncelliyor. Bu örnek normal todo-list örneğinden farklı olarak, özel bir TodoItem bileşeni kullanmadan sadece temel HTML öğeleriyle yapılmıştır.",
-      repoPath: "/blob/main/src/landing/samples/todo-list-without-custom-component.tsx",
+      repoPath:
+        "/blob/main/src/landing/samples/todo-list-without-custom-component.tsx",
       componentClass: TodoListWithoutCustomComponent,
     },
     {

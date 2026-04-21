@@ -10,35 +10,36 @@ export interface OutletProps {
 }
 
 export class Outlet extends NeolitComponent {
-  router: Router;
-  private ownsRouter: boolean;
+  router?: Router;
+  private ownsRouter: boolean = false;
   /**
    *
    */
-  constructor({ router, routeMap, initialPath = "/" }: OutletProps) {
-    super();
-
-    if (router) {
-      this.router = router;
+  onInit(): void {
+    if (this.properties.router) {
+      this.router = this.properties.router;
       this.ownsRouter = false;
       return;
     }
 
-    if (!routeMap) {
-      throw new Error("Outlet requires either a router or routeMap prop.");
+    if (!this.properties.routeMap) {
+      throw new Error("Outlet requires either a router or routeMa p prop.");
     }
 
-    this.router = new Router({ routeMap, initialPath });
+    this.router = new Router({
+      routeMap: this.properties.routeMap,
+      initialPath: this.properties.initialPath,
+    });
     this.ownsRouter = true;
   }
 
   updatePath(path: string) {
-    this.router.navigate(path);
+    this.router?.navigate(path);
   }
 
   override destroy(): void {
     if (this.ownsRouter) {
-      this.router.destroy();
+      this.router?.destroy();
     }
 
     super.destroy();
@@ -47,8 +48,8 @@ export class Outlet extends NeolitComponent {
   render(): NeolitNode | NeolitNode[] {
     return (
       <>
-        {fromState(this.router.activeRouteState).stateful(() => {
-          const activeRoute = this.router.activeRouteState.get();
+        {fromState(this.router!.activeRouteState).stateful(() => {
+          const activeRoute = this.router!.activeRouteState.get();
 
           if (activeRoute) {
             return activeRoute.route.componentFactory(activeRoute.parameters);
