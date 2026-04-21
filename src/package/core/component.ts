@@ -1,22 +1,51 @@
 import { NeolitNode } from "./neolit-node";
-import { State } from "./state";
+import { isState, State, StateOrPlain } from "./state";
 
-export abstract class NeolitComponent {
+export abstract class NeolitComponent<PROPERTIES = Record<string, any>> {
     static isNeolitComponent = true;
     static componentInstances = new Map<string, NeolitComponent>();
     private _mountTarget: HTMLElement | null = null;
     private _currentElement: NeolitNode[] | NeolitNode | null = null;
     private _unsubscribers: Array<() => void> = [];
     private key: string;
+    public properties: Partial<PROPERTIES> = {};
+    // public abstract initialProperties?: Partial<PROPERTIES>;
 
-    constructor(_properties?: Record<string, any>, key?: string) {
+    // Property'ler sonra uygulanıyor, böylece component instance'ı oluşturulduktan sonra props'lara erişilebilir oluyor. Bu sayede onInit gibi lifecycle metodlarında props'lara erişim sağlanabilir.
+    constructor(properties?: any, key?: string) {
+        properties;
+        // propertyler sonradan atanıyor ama jsx tagte alıyor propsları o yüzden kızıyor. Eğer kullanmazsam da eslint hata veriyor
         this.key = key ?? Math.random().toString(36).substring(2, 9);
         NeolitComponent.componentInstances.set(this.key, this);
+        console.info(this.properties);
     }
+
+    assignProperties(newProperties: Partial<PROPERTIES>): void {
+        // if (this.initialProperties) {
+        //     this.properties = this.initialProperties;
+        // }
+        if (newProperties) {
+            Object.entries(newProperties).forEach(([propKey, propValue]) => {
+                const key = propKey as keyof PROPERTIES;
+                if (propValue === undefined) {
+                    return;
+                }
+
+                if (typeof this.properties[key] === "object" && this.properties[key] instanceof State) {
+                    (this.properties[key] as State<typeof propValue>).set(propValue, { notifyIncoming: true, subscribeIncoming: true });
+                } else {
+                    this.properties[key] = propValue as any;
+                }
+            });
+        }
+    }
+
+    onInit?(): void;
 
     abstract render(): NeolitNode | NeolitNode[] | NeolitComponent | null;
 
-    watchToRerender<T>(state: State<T>): void {
+    watchToRerender<T>(state: StateOrPlain<T>): void {
+        if (!isState(state)) return;
         const listener = () => this._rerender();
         state.subscribe(listener);
         this._unsubscribers.push(() => state.unsubscribe(listener));

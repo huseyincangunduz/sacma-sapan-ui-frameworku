@@ -1,4 +1,4 @@
-import { NeolitNode, State } from "../core";
+import { getStateValue, NeolitNode, State } from "../core";
 import { For } from "./forloop";
 import { If } from "./ifblock";
 import { Stateful } from "./stateful";
@@ -34,11 +34,11 @@ export class FromState {
 
         const fn = () => {
 
-            return new If({
-                condition: this.state,
-                children: () => renderItem(this.state.get()),
-                elseChildren: this._elseChildren,
-            });
+            const ifComp = new If();
+            ifComp.properties.condition = this.state as State<boolean>;
+            ifComp.properties.children = () => renderItem(getStateValue(this.state));
+            ifComp.properties.elseChildren = this._elseChildren;
+            return ifComp;
         }
 
         fn["else"] = (elseRenderItem: () => NeolitNode) => {

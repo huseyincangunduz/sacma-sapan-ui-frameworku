@@ -1,4 +1,4 @@
-import { NeolitComponent, State, NeolitNode } from "../core";
+import { NeolitComponent, State, NeolitNode, getStateValue } from "../core";
 export interface IfBlockProperties {
   children: () => NeolitNode | NeolitNode[];
   condition: State<boolean>;
@@ -6,23 +6,23 @@ export interface IfBlockProperties {
 }
 
 export class If extends NeolitComponent {
-  condition: State<boolean>;
-  children: () => NeolitNode | NeolitNode[];
+  // condition: StateOrPlain<boolean>;
+  // children: () => NeolitNode | NeolitNode[];
   elseChildren?: () => NeolitNode | NeolitNode[];
 
-  constructor({ children, condition, elseChildren }: IfBlockProperties) {
+  constructor() {
     super();
-    this.children = children;
-    this.condition = condition;
-    this.elseChildren = elseChildren;
-    this.watchToRerender(this.condition);
+    // this.children = children;
+    // this.condition = condition;
+    // this.elseChildren = elseChildren;
+    this.watchToRerender(this.properties.condition);
   }
 
   render(): NeolitNode | NeolitNode[] {
-    if (this.condition.get()) {
-      return this.children?.();
+    if (getStateValue(this.properties.condition)) {
+      return this.properties.children?.();
     } else {
-      return this.elseChildren?.() ?? <></>;
+      return this.properties.elseChildren?.() ?? <></>;
     }
   }
 }
