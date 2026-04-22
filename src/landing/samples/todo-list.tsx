@@ -1,5 +1,5 @@
 import { NeolitComponent, state, NeolitNode } from "@ubs-platform/neolit/core";
-import { fromState } from "@ubs-platform/neolit/structural";
+import { For } from "@ubs-platform/neolit/structural";
 import { Input } from "../../general/input";
 import { Button } from "../../general/button";
 
@@ -10,7 +10,7 @@ export class TodoList extends NeolitComponent {
 
   todoItems = state<string[]>([]);
   newTodo = state("");
-  
+
   constructor() {
     super();
   }
@@ -26,15 +26,12 @@ export class TodoList extends NeolitComponent {
     return (
       <div>
         <h2>Yapılacaklar Listesi</h2>
-        <Input
-          value={this.newTodo}
-          placeholder="Yeni yapılacak..."
-        />
+        <Input value={this.newTodo} placeholder="Yeni yapılacak..." />
         <Button onclick={() => this.addTodo()}>Ekle</Button>
         <ul>
-          {fromState(this.todoItems).renderFor((item, index) => (
-            <li key={index}>{item}</li>
-          ))}
+          <For items={this.todoItems} keyFn={(item: string) => item}>
+            {(item: string, index: number) => <li key={index}>{item}</li>}
+          </For>
         </ul>
       </div>
     );

@@ -1,12 +1,12 @@
 import { NeolitComponent, state, NeolitNode } from "@ubs-platform/neolit/core";
-import { fromState } from "@ubs-platform/neolit/structural";
-import { Input } from "../../general/input";
+import { For } from "@ubs-platform/neolit/structural";
 import { Button } from "../../general/button";
 
 export class TodoListWithoutCustomComponent extends NeolitComponent {
   static sampleDescription =
     "Basit bir yapılacaklar listesi örneği. Kullanıcıdan yapılacaklar listesini girmesini istiyor ve ardından listeyi güncelliyor. Bu örnek normal todo-list örneğinden farklı olarak, Özel input bileşeni kullanmadan sadece temel HTML öğeleriyle yapılmıştır.";
-  static repoPath = "src/landing/samples/todo-list.tsx";
+  static repoPath =
+    "src/landing/samples/todo-list-without-custom-component.tsx";
 
   todoItems = state<string[]>([]);
   newTodo = state("");
@@ -35,9 +35,9 @@ export class TodoListWithoutCustomComponent extends NeolitComponent {
         ></input>
         <Button onclick={() => this.addTodo()}>Ekle</Button>
         <ul>
-          {fromState(this.todoItems).renderFor((item, index) => (
-            <li key={index}>{item}</li>
-          ))}
+          <For items={this.todoItems} keyFn={(item: string) => item}>
+            {(item: string, index: number) => <li key={index}>{item}</li>}
+          </For>
         </ul>
       </div>
     );

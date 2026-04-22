@@ -5,7 +5,7 @@ import {
   asyncState,
 } from "@ubs-platform/neolit/core";
 import { Button } from "../../general/button";
-import { fromState } from "@ubs-platform/neolit/structural";
+import { If, Stateful } from "@ubs-platform/neolit/structural";
 
 export class AsyncFetch extends NeolitComponent {
   static sampleDescription =
@@ -17,13 +17,9 @@ export class AsyncFetch extends NeolitComponent {
     null,
   );
 
-  constructor() {
-    super();
-  }
-
   startFail(): void {
     this.asyncData.setAsync(
-      new Promise<string>((resolve, reject) =>
+      new Promise<string>((_resolve, reject) =>
         setTimeout(
           () =>
             reject(new Error("İşlem başarısız oldu! ❌ 5 saniye beklendi.")),
@@ -45,13 +41,18 @@ export class AsyncFetch extends NeolitComponent {
   }
 
   render(): NeolitNode {
+    const allIn = this.asyncData.allInComputed();
 
-    
     return (
       <div>
+        <div>{this.asyncData.busy}</div>
         {/* Durumlar */}
-        {fromState(this.asyncData.allInComputed()).stateful((values) => {
-          return (
+        <Stateful state={allIn}>
+          {(values: {
+            data: string | null;
+            busy: boolean;
+            error: Error | null;
+          }) => (
             <>
               {values.error && (
                 <p style={{ color: "red", marginTop: "8px" }}>
@@ -64,28 +65,28 @@ export class AsyncFetch extends NeolitComponent {
                 </p>
               )}
             </>
-          );
-        })}
+          )}
+        </Stateful>
         {/* Aksiyon butonları */}
-        {fromState(this.asyncData.busy)
-          .renderIf(() => (
+        <If
+          condition={this.asyncData.busy}
+          elseChildren={() => (
+            <div className="flex gap-1">
+              <Button onclick={() => this.start()}>
+                Başarılı işlem başlat
+              </Button>
+              <Button onclick={() => this.startFail()}>
+                Hatalı işlem başlat
+              </Button>
+            </div>
+          )}
+        >
+          {() => (
             <p style={{ marginTop: "8px" }}>
               İşlem devam ediyor... Lütfen bekleyin.
             </p>
-          ))
-          .else(() => {
-            return (
-              <div className="flex gap-1">
-                <Button onclick={() => this.start()}>
-                  Başarılı işlem başlat
-                </Button>
-
-                <Button onclick={() => this.startFail()}>
-                  Hatalı işlem başlat
-                </Button>
-              </div>
-            );
-          })}
+          )}
+        </If>
       </div>
     );
   }
