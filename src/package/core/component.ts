@@ -19,7 +19,7 @@ export abstract class NeolitComponent<PROPERTIES = Record<string, any>> {
    * SEEMS AS PROPERTIES BUT DO NOT USE IT. INSTEAD USE ASSIGNPROPS METHOD AFTER CONSTRUCTING THE COMPONENT.
    * @param key
    */
-  constructor(properties?: any, key?: string) {
+  constructor(properties?: PROPERTIES, key?: string) {
     properties;
     // propertyler sonradan atanıyor ama jsx tagte alıyor propsları o yüzden kızıyor. Eğer kullanmazsam da eslint hata veriyor
     this.key = key ?? crypto.randomUUID();
