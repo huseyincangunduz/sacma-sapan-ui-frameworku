@@ -27,7 +27,7 @@ export class State<DATA> {
       notifyIncoming: false,
     },
   ): void {
-    if (_newData == this) {
+    if (_newData === this) {
       console.warn("State is set to itself");
       return;
     }
