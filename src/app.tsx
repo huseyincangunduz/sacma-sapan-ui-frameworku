@@ -1,18 +1,11 @@
 import { appContextInjector } from "./app-context";
-import { Introduction } from "./landing/introduction";
-import { BookList } from "./lotus-app/components/book-list";
 import { NeolitComponent, NeolitNode } from "./package/core";
 import {
-  createInjector,
   inject,
-  provideClass,
-  provideValue,
-  rootInjector,
 } from "./package/injectables";
 import { Outlet } from "./package/routing/outlet";
 import { RouteMap } from "./package/routing/route-map";
 import { Router } from "./package/routing/router";
-import { HelloWorld } from "./tester/hello-world";
 
 export class App extends NeolitComponent {
   /**
