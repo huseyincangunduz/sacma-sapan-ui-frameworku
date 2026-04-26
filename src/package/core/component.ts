@@ -14,14 +14,11 @@ export abstract class NeolitComponent<PROPERTIES = Record<string, any>> {
   // Property'ler sonra uygulanıyor, böylece component instance'ı oluşturulduktan sonra props'lara erişilebilir oluyor. Bu sayede onInit gibi lifecycle metodlarında props'lara erişim sağlanabilir.
   /**
    *
-   * @param properties PROPERTIES OLARAK GÖRÜNÜYOR AMA LÜTFEN KULLANMAYIN. ÇÜNKÜ JSX TAGTE ALIYOR PROPSLARI O YÜZDEN KIZIYOR. EĞER KULLANMAZSAM DA ESLINT HATA VERİYOR.
-   * ONUN YERİNE CONSTRUCT ETTİKTEN SONRA ASSIGNPROPS METODUNU KULLANIN.
-   * SEEMS AS PROPERTIES BUT DO NOT USE IT. INSTEAD USE ASSIGNPROPS METHOD AFTER CONSTRUCTING THE COMPONENT.
-   * @param key
+   * @param properties Component'e ilk oluşturulurken verilen props'lar. Bu props'lar component instance'ı oluşturulduktan sonra properties alanına atanır ve onInit gibi lifecycle metodlarında erişilebilir olur. Eğer component instance'ı oluşturulurken props verilmezse, properties alanı boş bir nesne olarak başlatılır.
+   * @param key Component'e atanacak benzersiz anahtar. Eğer verilmezse otomatik olarak oluşturulur.
    */
   constructor(properties?: PROPERTIES, key?: string) {
     this.initialProperties = properties;
-    // propertyler sonradan atanıyor ama jsx tagte alıyor propsları o yüzden kızıyor. Eğer kullanmazsam da eslint hata veriyor
     this.key = key ?? crypto.randomUUID();
     NeolitComponent.componentInstances.set(this.key, this);
   }
