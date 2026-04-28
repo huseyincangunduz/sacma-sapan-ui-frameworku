@@ -1,15 +1,21 @@
 export type StateOrPlain<T> = State<T> | T;
+export interface StateOptions {
+  notifyIncomingWhenSetState?: boolean;
+  subscribeIncomingWhenSetState?: boolean;
+}
 export class State<DATA> {
   private data: DATA;
 
   changeListeners: Array<(newData: DATA, oldData?: DATA) => void> = [];
   boundState?: State<DATA> | null = null;
-  boundingStateSubscription: (data: DATA) => void = () => {};
+  boundingStateSubscription: (data: DATA) => void = () => { };
   notifyIncoming: boolean = false;
+  defaultOptions: StateOptions;
   // stateTwoBind?: State<DATA> | null = null;
 
-  constructor(initialData: DATA) {
+  constructor(initialData: DATA, defaultOptions?: StateOptions) {
     this.data = initialData;
+    this.defaultOptions = defaultOptions || {};
   }
 
   get(): DATA {
@@ -22,10 +28,9 @@ export class State<DATA> {
    */
   set(
     _newData: DATA | State<DATA>,
-    { subscribeIncoming, notifyIncoming } = {
-      subscribeIncoming: false,
-      notifyIncoming: false,
-    },
+    { subscribeIncoming = this.defaultOptions.notifyIncomingWhenSetState || false,
+      notifyIncoming = this.defaultOptions.subscribeIncomingWhenSetState || false
+    }: { subscribeIncoming?: boolean, notifyIncoming?: boolean } = {},
   ): void {
     if (_newData === this) {
       console.warn("State is set to itself");
@@ -34,7 +39,6 @@ export class State<DATA> {
     if (this.data === _newData) {
       return;
     }
-
     const oldValue = this.data;
     const newData = _newData instanceof State ? _newData.get() : _newData;
     const triggerFlag = this.determineTriggerIsRequired(newData);
@@ -190,7 +194,7 @@ export class CombinedStateUpdateInfo {
     public updatedState: StateOrPlain<any>,
     public newValue: any,
     public oldValue: any = null,
-  ) {}
+  ) { }
 }
 
 export class CombinedState extends State<CombinedStateUpdateInfo> {
@@ -223,8 +227,8 @@ export function computed<DATA>(
   return new ComputedState(statesListened, computeFn);
 }
 
-export function state<DATA>(initialData: DATA): State<DATA> {
-  return new State(initialData);
+export function state<DATA>(initialData: DATA, options?: StateOptions): State<DATA> {
+  return new State(initialData, options);
 }
 
 export function isTheyEqual<T>(

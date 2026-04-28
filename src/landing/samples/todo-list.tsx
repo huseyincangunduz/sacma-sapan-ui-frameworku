@@ -9,7 +9,7 @@ export class TodoList extends NeolitComponent {
   static repoPath = "src/landing/samples/todo-list.tsx";
 
   todoItems = state<string[]>([]);
-  newTodo = state("");
+  newTodo = state("", { notifyIncomingWhenSetState: true });
 
   constructor() {
     super();
@@ -30,7 +30,7 @@ export class TodoList extends NeolitComponent {
         <Button onclick={() => this.addTodo()}>Ekle</Button>
         <ul>
           <For items={this.todoItems} keyFn={(item: string) => item}>
-            {(item: string, index: number) => <li key={index}>{item}</li>}
+            {(item: string, index: number) => <li key={item}>{item} <Button onclick={() => this.todoItems.arrayFilter((_, i) => i !== index)}>Sil</Button></li>}
           </For>
         </ul>
       </div>

@@ -37,7 +37,7 @@ export interface ForProperties<T> {
  */
 export class For<T> extends NeolitComponent<ForProperties<T>> {
   public properties = {
-    items: state<T[]>([]),
+    items: state<T[]>([], { notifyIncomingWhenSetState: true, subscribeIncomingWhenSetState: true }),
   } as ForProperties<T>;
   previousItems: T[] = [];
   // items: State<T[]>;

@@ -39,10 +39,7 @@ export abstract class NeolitComponent<PROPERTIES = Record<string, any>> {
           typeof this.properties[key] === "object" &&
           this.properties[key] instanceof State
         ) {
-          (this.properties[key] as State<typeof propValue>).set(propValue, {
-            notifyIncoming: true,
-            subscribeIncoming: true,
-          });
+          (this.properties[key] as State<typeof propValue>).set(propValue);
         } else {
           this.properties[key] = propValue as any;
         }
@@ -72,18 +69,24 @@ export abstract class NeolitComponent<PROPERTIES = Record<string, any>> {
     NeolitComponent.componentInstances.delete(this.key);
   }
 
-  private regularizeIncomingElements(incomingElements: NeolitComponent | NeolitNode | NeolitNode[] | null | undefined): NeolitNode[] {
+
+  private regularizeIncomingElements(incomingElements: NeolitComponent | NeolitNode | NeolitNode[] | NeolitComponent[] | null | undefined): NeolitNode[] {
     const incomingElementsConverted: NeolitNode[] = []
     if (incomingElements instanceof NeolitComponent) {
-      const el = this.regularizeIncomingElements(incomingElements.render());
+      let el: NeolitNode | NeolitNode[] | NeolitComponent | null = null;
+      do {
+        el = this.regularizeIncomingElements(incomingElements.render());
+      } while (el instanceof NeolitComponent);
       incomingElementsConverted.push(...el);
 
     } else if (Array.isArray(incomingElements)) {
-      incomingElementsConverted.push(...incomingElements);
+      incomingElements.forEach((el) => {
+        incomingElementsConverted.push(...this.regularizeIncomingElements(el));
+      });
     } else if (incomingElements != null) {
       incomingElementsConverted.push(incomingElements as NeolitNode);
     }
-    return incomingElementsConverted;
+    return incomingElementsConverted.filter((el) => el != null && el != undefined);
   }
 
   mount(target: HTMLElement): NeolitNode[] {
@@ -114,7 +117,7 @@ export abstract class NeolitComponent<PROPERTIES = Record<string, any>> {
 
 
   private _rerender(): void {
-    if (!this._mountTarget || (!this._currentElement || this._currentElement.length == 0)) return;
+    // if (!this._mountTarget || (!this._currentElement || this._currentElement.length == 0)) return;
     let newElement = this.render();
     // Eğer currentEls bir NeolitComponent ise, componentInstance'ın render metodunu çağırarak gerçek elementleri elde edelim.
     const newElementConverted = this.regularizeIncomingElements(newElement);

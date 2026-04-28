@@ -8,8 +8,8 @@ export class TodoListWithoutCustomComponent extends NeolitComponent {
   static repoPath =
     "src/landing/samples/todo-list-without-custom-component.tsx";
 
-  todoItems = state<string[]>([]);
-  newTodo = state("");
+  todoItems = state<string[]>([], { notifyIncomingWhenSetState: true });
+  newTodo = state("", { notifyIncomingWhenSetState: true });
 
   constructor() {
     super();
@@ -36,7 +36,7 @@ export class TodoListWithoutCustomComponent extends NeolitComponent {
         <Button onclick={() => this.addTodo()}>Ekle</Button>
         <ul>
           <For items={this.todoItems} keyFn={(item: string) => item}>
-            {(item: string, index: number) => <li key={index}>{item}</li>}
+            {(item: string) => <li>{item} <Button onclick={() => this.todoItems.update(a => a.filter(a => a != item))}>Sil</Button></li>}
           </For>
         </ul>
       </div>
