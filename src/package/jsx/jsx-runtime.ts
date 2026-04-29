@@ -213,7 +213,19 @@ export function jsx(
     return instance;
   }
 
-  const el = document.createElement(tag);
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const SVG_TAGS = new Set([
+    "svg", "circle", "line", "rect", "path", "polygon", "polyline", "ellipse",
+    "text", "tspan", "g", "defs", "use", "symbol", "marker", "linearGradient",
+    "radialGradient", "stop", "clipPath", "mask", "pattern", "image",
+    "foreignObject", "title", "desc", "filter", "feBlend", "feColorMatrix",
+    "feComposite", "feConvolveMatrix", "feDiffuseLighting", "feDisplacementMap",
+    "feDropShadow", "feFlood", "feGaussianBlur", "feImage", "feMerge",
+    "feMorphology", "feOffset", "feSpecularLighting", "feTile", "feTurbulence",
+  ]);
+  const el = (SVG_TAGS.has(tag)
+    ? document.createElementNS(SVG_NS, tag)
+    : document.createElement(tag)) as HTMLElement;
   applyProps(el, attrs);
   toChildArray(children).forEach((child) =>
     appendJsxChildOrFunction(el, child),
