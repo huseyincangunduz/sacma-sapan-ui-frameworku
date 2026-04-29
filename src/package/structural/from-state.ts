@@ -1,5 +1,6 @@
 import { getStateValue, NeolitComponent, NeolitNode, State } from "../core";
 import { For } from "./forloop";
+import { Forv2 } from "./forloop-v2";
 import { If } from "./ifblock";
 import { Stateful } from "./stateful";
 
@@ -21,6 +22,18 @@ export class FromState {
   }
 
   renderFor<T = any>(
+    renderItem: (item: T, index: number) => NeolitNode,
+  ): () => Forv2<T> {
+    return () => {
+      return NeolitComponent.constructInitialize(Forv2<T>, {
+        items: this.state,
+        keyFn: this._keyFn,
+        children: (item, index) => renderItem(item as T, index),
+      }) as Forv2<T>;
+    };
+  }
+
+  renderForLegacy<T = any>(
     renderItem: (item: T, index: number) => NeolitNode,
   ): () => For<T> {
     return () => {

@@ -6,6 +6,7 @@ import { inject } from "@ubs-platform/neolit/injectables";
 import { appContextInjector } from "../../app-context";
 import { TodoListWithoutCustomComponent } from "./todo-list-without-custom-component";
 import { AsyncFetch } from "./async-fetch";
+import { AdvancedTodoList } from "./advanced-todo-list";
 
 export class SampleListPage extends NeolitComponent {
   samples = [
@@ -17,6 +18,14 @@ export class SampleListPage extends NeolitComponent {
       componentClass: HelloWorld,
     },
     {
+      name: "Normal input kullanarak Yapılacaklar Listesi",
+      description:
+        "Basit bir yapılacaklar listesi örneği. Kullanıcıdan yapılacaklar listesini girmesini istiyor ve ardından listeyi güncelliyor. Bu örnek normal todo-list örneğinden farklı olarak, özel bir TodoItem bileşeni kullanmadan sadece temel HTML öğeleriyle yapılmıştır.",
+      repoPath:
+        "/blob/main/src/landing/samples/todo-list-without-custom-component.tsx",
+      componentClass: TodoListWithoutCustomComponent,
+    },
+    {
       name: "Yapılacaklar Listesi",
       description:
         "Basit bir yapılacaklar listesi örneği. Kullanıcıdan yapılacaklar listesini girmesini istiyor ve ardından listeyi güncelliyor.",
@@ -24,12 +33,11 @@ export class SampleListPage extends NeolitComponent {
       componentClass: TodoList,
     },
     {
-      name: "Normal input kullanarak Yapılacaklar Listesi",
+      name: "Çok daha gelişmiş yapılacaklar listesi (galiba emin değilim)",
       description:
-        "Basit bir yapılacaklar listesi örneği. Kullanıcıdan yapılacaklar listesini girmesini istiyor ve ardından listeyi güncelliyor. Bu örnek normal todo-list örneğinden farklı olarak, özel bir TodoItem bileşeni kullanmadan sadece temel HTML öğeleriyle yapılmıştır.",
-      repoPath:
-        "/blob/main/src/landing/samples/todo-list-without-custom-component.tsx",
-      componentClass: TodoListWithoutCustomComponent,
+        "İkinci bir yapılacaklar listesi örneği. Bu örnek normal todo-list örneğinden farklı olarak, Karmaşık state yapısını ve ForV2 bileşeninin performans farkını göstermek için yazıldı.",
+      repoPath: "/blob/main/src/landing/samples/advanced-todo-list.tsx",
+      componentClass: AdvancedTodoList,
     },
     {
       name: "Sayaç",

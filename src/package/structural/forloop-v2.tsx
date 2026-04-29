@@ -1,73 +1,74 @@
-import { computed, getStateValue, isState, NeolitComponent, NeolitNode, state, State } from "../core";
+import {
+  getStateValue,
+  isState,
+  NeolitComponent,
+  NeolitNode,
+  state,
+} from "../core";
 import { ForProperties } from "./forloop";
-import { If } from "./ifblock";
-import { Stateful } from "./stateful";
-
 
 export class Forv2<T> extends NeolitComponent<ForProperties<T>> {
-    public properties = {
-        items: state<T[]>([]),
-    } as ForProperties<T>
+  public properties = {
+    items: state<T[]>([]),
+  } as ForProperties<T>;
 
-    itemStateMapByKey = new Map<string | number, State<T>>()
+  /** Key → rendered DOM node cache */
+  itemDomMapByKey = new Map<string | number, NeolitNode>();
 
-    onInit(): void {
-        if (isState(this.properties.items)) {
-            this.properties.items.subscribe(() => this.onArrayUpdate());
-        }
+  /** Key → the item value used to render the cached node */
+  itemSnapshotByKey = new Map<string | number, T>();
+
+  onInit(): void {
+    if (isState(this.properties.items)) {
+      this.properties.items.subscribe(() => this.onArrayUpdate());
+    }
+  }
+
+  private genKey(item: T, index: number): string | number {
+    return this.properties.keyFn ? this.properties.keyFn(item, index) : index;
+  }
+
+  onArrayUpdate(): void {
+    const items = getStateValue(this.properties.items) ?? [];
+    let structureChanged = false;
+
+    // --- Upsert pass ---
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
+      const key = this.genKey(item, index);
+
+      if (!this.itemDomMapByKey.has(key)) {
+        // Yeni item: DOM node oluştur ve cache'e al.
+        const node = this.properties.children(item, index);
+        this.itemDomMapByKey.set(key, node);
+        this.itemSnapshotByKey.set(key, item);
+        structureChanged = true;
+      }
+      // Var olan item: children fonksiyonu zaten reaktif state'e bağlıysa
+      // yeniden render etmeye gerek yok. Bağlı değilse snapshot'ı kontrol et.
     }
 
-    genKey(item: T, index: number): string | number {
-        if (this.properties.keyFn) {
-            return this.properties.keyFn(item, index);
-        }
-        return index;
+    // --- Prune pass: listeden çıkarılan itemları temizle ---
+    const activeKeys = new Set(
+      items.map((item, index) => this.genKey(item, index)),
+    );
+
+    for (const key of this.itemDomMapByKey.keys()) {
+      if (!activeKeys.has(key)) {
+        const node = this.itemDomMapByKey.get(key);
+        node?.remove();
+        this.itemDomMapByKey.delete(key);
+        this.itemSnapshotByKey.delete(key);
+        structureChanged = true;
+      }
     }
 
-    onArrayUpdate(): void {
-        // if (this.properties.keyFn == null) {
-        //     this.rerender();
-        //     return;
-        // }
-        let newInsertion = false;
-        const items = getStateValue(this.properties.items) || [];
-        debugger
-        for (let index = 0; index < items.length; index++) {
-            const item = items[index];
-            const key = this.genKey(item, index);
-            if (!this.itemStateMapByKey.has(key)) {
-                const newAddedState = state(item);
-                newAddedState.subscribe(() => alert("state changed for key: " + key));
-                this.itemStateMapByKey.set(key, newAddedState);
-
-                newInsertion = true;
-            } else {
-                const itemState = this.itemStateMapByKey.get(key)!;
-                itemState.set(item);
-            }
-        }
-
-        if (items.length != this.itemStateMapByKey.size) {
-         // Eğer yeni itemlerle itemStateMapByKey arasında boyut farkı varsa, olmayan anahtar ya da indisler için state değerlerini null olarak setleyeceğiz ki render sırasında bunları kontrol edip gereksiz itemState'leri temizleyelim.
-            this.itemStateMapByKey.forEach((_, key) => {
-                const exists = items.some((item, index) => this.genKey(item, index) === key);
-                if (!exists) {
-                    this.itemStateMapByKey.get(key)?.set(null as any);
-                }
-            });
-        }
-
-        if (newInsertion) {
-            this.rerender();
-        }
+    if (structureChanged) {
+      this.rerender();
     }
+  }
 
-
-    render(): NeolitNode | NeolitNode[] | NeolitComponent | null {
-        const values = Array.from(this.itemStateMapByKey.values() || []);
-        return values.map((itemState, index) => {
-            // return <div>{itemState}</div>
-            return <If state={itemState}>{() => this.properties.children?.(itemState.get(), index)}</If>;
-        });
-    }
+  render(): NeolitNode[] {
+    return Array.from(this.itemDomMapByKey.values());
+  }
 }
