@@ -176,7 +176,9 @@ function applyClassName(
 const PASSIVE_FALSE_EVENTS = new Set(["wheel", "touchmove", "touchstart"]);
 
 
-  for (const [key, value] of Object.entries(attrs)) {
+function applyProps(el: HTMLElement, attrs: Props): void {
+
+  for (const [key, value] of Object.entries(attrs ?? {})) {
     if (key.startsWith("on") && typeof value === "function") {
       const eventName = key.slice(2).toLowerCase();
       el.addEventListener(
@@ -249,7 +251,7 @@ export function jsx(
   toChildArray(children).forEach((child) =>
     appendJsxChildOrFunction(el, child),
   );
-  
+
   return el;
 }
 
