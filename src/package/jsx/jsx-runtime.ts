@@ -155,7 +155,7 @@ function applyClassName(
     // classKey'i ekle veya çıkar. Yani classValue true ise classKey'i ekle, false ise classKey'i çıkar.
     for (const [classKey, classValue] of Object.entries(value!)) {
       bindToStateOrPlain(el, classValue as StateOrPlain<any>, (v) => {
-        console.info("Applying class ", classKey, " with value ", v);
+        // console.info("Applying class ", classKey, " with value ", v);
         el.classList.toggle(classKey, !!v);
       });
     }
@@ -224,13 +224,13 @@ export function jsx(
 
   if (typeof tag === "function") {
     const instance = new tag(props);
-    console.info("Component yaratıldıktan sonra props: ", instance.properties);
+    // console.info("Component yaratıldıktan sonra props: ", instance.properties);
     instance.assignProperties();
     instance.onInit?.();
-    console.info(
-      "Component yaratıldıktan ve props atandıktan sonra props: ",
-      instance.properties,
-    );
+    // console.info(
+    //   "Component yaratıldıktan ve props atandıktan sonra props: ",
+    //   instance.properties,
+    // );
     return instance;
   }
 
