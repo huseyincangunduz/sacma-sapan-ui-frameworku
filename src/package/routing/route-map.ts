@@ -191,21 +191,6 @@ export class RouteMap {
         }
         return null;
 
-        // if (!hasWildcard) {
-        //     return null;
-        // }
-
-        // const childrenPath = remainingSegments.join("/");
-        // const childMatch = await this.findMatch(route.childRoutes, remainingSegments, nextParameters);
-
-        // if (!childMatch) {
-        //     return null;
-        // }
-
-        // return {
-        //     ...childMatch.parameters,
-        //     childrenPath
-        // };
     }
 
 }
