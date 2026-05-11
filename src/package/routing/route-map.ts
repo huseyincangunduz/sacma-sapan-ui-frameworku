@@ -16,9 +16,7 @@ export interface PathSegment {
 export interface RouteInfo {
     path: string;
     componentFactory: (parameters: UrlParameters) => NeolitNode;
-    // childRoutes?: RouteInfo[];
     pathSegments?: PathSegment[];
-    canHasChildren?: boolean;
     // Eğer false ya da string dönerse, yönlendirme engellenir. String dönerse bu string'e yönlendirilir.
     canActivate?: (parameters: UrlParameters) => boolean | string | Promise<boolean | string>;
 }
