@@ -427,12 +427,11 @@ const rotaHaritasi = new RouteMap([
             // true → izin ver, false → 404, string → yönlendir
             return girisYapildiMi();
         },
-        childRoutes: [
-            {
-                path: "gonderiler/:gonderiId",
-                componentFactory: (params) => <Gonderi gonderiId={params.pathParameters.gonderiId} />,
-            },
-        ],
+    },
+    // Alt rotaları component'e devretmek için /** kullanın
+    {
+        path: "/panel/**",
+        componentFactory: (params) => <Panel {...params} />,
     },
 ]);
 ```
@@ -459,6 +458,46 @@ router.destroy();                      // popstate dinleyicisini kaldırır
 // router.activeRouteState → AsyncState<RouteMatch | null>     eşleşen rota
 ```
 
+#### Child routing (Alt rota yönetimi)
+
+Bir component altında alt rotalar tanımlamak için üst rotanın path'ini `/**` ile bitirin. Router, eşleşen öneki siler ve geri kalanı `UrlParameters` içindeki `childrenPath` alanı olarak component'e iletir. Component, bu değeri kendi `Router`'ına `initialPath` olarak geçer ve bir `<Outlet>` render eder.
+
+```tsx
+import { NeolitComponent, NeolitNode } from "@ubs-platform/neolit/core";
+import { Outlet, RouteMap, Router, UrlParameters } from "@ubs-platform/neolit/routing";
+
+class Panel extends NeolitComponent<UrlParameters> {
+    private altRouter!: Router;
+
+    onInit(): void {
+        this.altRouter = new Router({
+            initialPath: this.properties.childrenPath,
+            routeMap: new RouteMap([
+                {
+                    path: "genel-bakis",
+                    componentFactory: () => <GenelBakis />,
+                },
+                {
+                    path: "ayarlar",
+                    componentFactory: () => <Ayarlar />,
+                },
+            ]),
+        });
+    }
+
+    render(): NeolitNode {
+        return (
+            <>
+                <nav>...</nav>
+                <Outlet router={this.altRouter} />
+            </>
+        );
+    }
+}
+```
+
+Üst rotada yalnızca path sonuna `/**` eklenmesi yeterlidir; `childRoutes` dizisine gerek yoktur. Alt rota yönetimi tamamen component'in sorumluluğundadır.
+
 #### `Outlet` ile render
 
 ```tsx
@@ -477,10 +516,17 @@ import { Outlet } from "@ubs-platform/neolit/routing";
 
 | Prop | Tür | Açıklama |
 |---|---|---|
-| `path` | `string` | URL yolu, `:param` segmentlerini destekler |
+| `path` | `string` | URL yolu, `:param` segmentleri ve alt rota yönetimi için `/**` soneki desteklenir |
 | `componentFactory` | `(params) => NeolitNode` | Çözümlenen URL parametreleriyle çağrılan fabrika |
-| `childRoutes` | `RouteInfo[]` | İç içe rotalar |
 | `canActivate` | `(params) => boolean \| string \| Promise<...>` | Guard: `true` izin verir, `false` 404 gösterir, string yönlendirir |
+
+**`UrlParameters` yapısı:**
+
+| Alan | Tür | Açıklama |
+|---|---|---|
+| `pathParameters` | `Record<string, string>` | `:param` segmentlerinden yakalanan değerler |
+| `queryParameters` | `Record<string, string>` | Ayrıştırılmış query string değerleri |
+| `childrenPath` | `string \| undefined` | `/**` eşleşmesinden sonraki kalan yol; child router'a `initialPath` olarak verilir |
 
 ---
 

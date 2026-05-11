@@ -427,12 +427,11 @@ const routeMap = new RouteMap([
             // return true to allow, false for 404, or a path string to redirect
             return isLoggedIn();
         },
-        childRoutes: [
-            {
-                path: "posts/:postId",
-                componentFactory: (params) => <Post postId={params.pathParameters.postId} />,
-            },
-        ],
+    },
+    // Use /** to delegate sub-paths to the component itself
+    {
+        path: "/dashboard/**",
+        componentFactory: (params) => <Dashboard {...params} />,
     },
 ]);
 ```
@@ -459,6 +458,46 @@ router.destroy();               // remove popstate listener
 // router.activeRouteState → AsyncState<RouteMatch | null>     current matched route
 ```
 
+#### Child routing
+
+To nest routes under a parent component, end the parent's path with `/**`. The router strips the matched prefix and passes the remainder as `childrenPath` in `UrlParameters`. The parent component then creates its own `Router` with that path and renders an `<Outlet>`.
+
+```tsx
+import { NeolitComponent, NeolitNode } from "@ubs-platform/neolit/core";
+import { Outlet, RouteMap, Router, UrlParameters } from "@ubs-platform/neolit/routing";
+
+class Dashboard extends NeolitComponent<UrlParameters> {
+    private childRouter!: Router;
+
+    onInit(): void {
+        this.childRouter = new Router({
+            initialPath: this.properties.childrenPath,
+            routeMap: new RouteMap([
+                {
+                    path: "overview",
+                    componentFactory: () => <Overview />,
+                },
+                {
+                    path: "settings",
+                    componentFactory: () => <Settings />,
+                },
+            ]),
+        });
+    }
+
+    render(): NeolitNode {
+        return (
+            <>
+                <nav>...</nav>
+                <Outlet router={this.childRouter} />
+            </>
+        );
+    }
+}
+```
+
+The parent route in `RouteMap` only needs `/**` at the end — no `childRoutes` array is required. The parent component controls its own sub-routing entirely.
+
 #### Rendering with `Outlet`
 
 ```tsx
@@ -477,10 +516,17 @@ import { Outlet } from "@ubs-platform/neolit/routing";
 
 | Prop | Type | Description |
 |---|---|---|
-| `path` | `string` | URL path, supports `:param` segments |
+| `path` | `string` | URL path, supports `:param` segments and `/**` wildcard suffix for child routing |
 | `componentFactory` | `(params) => NeolitNode` | Factory called with resolved URL parameters |
-| `childRoutes` | `RouteInfo[]` | Nested routes |
 | `canActivate` | `(params) => boolean \| string \| Promise<...>` | Guard: `true` allows, `false` shows 404, a string redirects |
+
+**`UrlParameters` shape:**
+
+| Field | Type | Description |
+|---|---|---|
+| `pathParameters` | `Record<string, string>` | Values captured from `:param` segments |
+| `queryParameters` | `Record<string, string>` | Parsed query string values |
+| `childrenPath` | `string \| undefined` | Remaining path after a `/**` match; pass as `initialPath` to a child router |
 
 ---
 
