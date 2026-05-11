@@ -27,6 +27,10 @@ export class KyleBroflovski extends NeolitComponent<UrlParameters> {
       initialPath: this.properties.childrenPath!,
       routeMap: new RouteMap([
         {
+          path: "",
+          componentFactory: () => <KyleDaily />,
+        },
+        {
           path: "daily",
           componentFactory: () => <KyleDaily />,
         },
@@ -45,7 +49,7 @@ export class KyleBroflovski extends NeolitComponent<UrlParameters> {
   render(): NeolitNode {
     return (
       <>
-        <div>{this.properties.childrenPath}</div>
+        {/* <div>{this.properties.childrenPath || "No path"}</div> */}
         <Outlet router={this.router} />
       </>
     );

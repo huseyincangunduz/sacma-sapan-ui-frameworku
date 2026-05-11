@@ -148,7 +148,7 @@ export class RouteMap {
         incomingPathSegments: string[],
         baseParameters: UrlParameters
     ): Promise<UrlParameters | null> {
-        if (route.pathSegments.length > incomingPathSegments.length) {
+        if (route.pathSegments.filter(a => !a.reservedForChildren).length > incomingPathSegments.length) {
             return null;
         }
 
@@ -157,7 +157,11 @@ export class RouteMap {
         for (let index = 0; index < route.pathSegments.length; index++) {
             const routeSegment = route.pathSegments[index];
             const incomingSegment = incomingPathSegments[index];
-
+            if (route.pathSegments[index + 1]?.reservedForChildren) {
+                // Eğer ** ile bitiyorsa artık gerisini componente havale edeceğiz. Orada kendine göre ayarlar artık
+                hasWildcard = true;
+                break;
+            }
             if (!incomingSegment) {
                 return null;
             }
@@ -167,18 +171,12 @@ export class RouteMap {
                 continue;
             }
 
-            if (route.pathSegments[index + 1]?.reservedForChildren) {
-                // Eğer ** ile bitiyorsa artık gerisini componente havale edeceğiz. Orada kendine göre ayarlar artık
-                hasWildcard = true;
-                break;
-            }
 
             if (routeSegment.name !== incomingSegment) {
                 return null;
             }
 
         }
-        debugger
         const remainingSegments = incomingPathSegments.slice((route.pathSegments.length - (hasWildcard ? 1 : 0)));
         if (remainingSegments.length === 0 || hasWildcard) {
             if (!hasWildcard) {
