@@ -460,7 +460,7 @@ router.destroy();                      // popstate dinleyicisini kaldırır
 
 #### Child routing (Alt rota yönetimi)
 
-Bir component altında alt rotalar tanımlamak için üst rotanın path'ini `/**` ile bitirin. Router, eşleşen öneki siler ve geri kalanı `UrlParameters` içindeki `childrenPath` alanı olarak component'e iletir. Component, bu değeri kendi `Router`'ına `initialPath` olarak geçer ve bir `<Outlet>` render eder.
+Bir component altında alt rotalar tanımlamak için üst rotanın path'ini `/**` ile bitirin. Router, eşleşen öneki siler ve geri kalanı `childrenPath`, eşleşen öneki ise `parentPath` olarak `UrlParameters` içinde component'e iletir. Component, `childrenPath`'i child router'a `initialPath` olarak, `parentPath`'i ise `parentPath` olarak geçerir; bu sayede `navigate` ve `replace` çağrıları tarayıcı adres çubuğunda her zaman tam URL'yi gösterir.
 
 ```tsx
 import { NeolitComponent, NeolitNode } from "@ubs-platform/neolit/core";
@@ -472,6 +472,7 @@ class Panel extends NeolitComponent<UrlParameters> {
     onInit(): void {
         this.altRouter = new Router({
             initialPath: this.properties.childrenPath,
+            parentPath: this.properties.parentPath,
             routeMap: new RouteMap([
                 {
                     path: "genel-bakis",
@@ -488,7 +489,11 @@ class Panel extends NeolitComponent<UrlParameters> {
     render(): NeolitNode {
         return (
             <>
-                <nav>...</nav>
+                <nav>
+                    {/* navigate relative path alır; Router tarayıcı URL'sini otomatik prefix'ler */}
+                    <button onclick={() => this.altRouter.navigate("genel-bakis")}>Genel Bakış</button>
+                    <button onclick={() => this.altRouter.navigate("ayarlar")}>Ayarlar</button>
+                </nav>
                 <Outlet router={this.altRouter} />
             </>
         );
@@ -527,6 +532,7 @@ import { Outlet } from "@ubs-platform/neolit/routing";
 | `pathParameters` | `Record<string, string>` | `:param` segmentlerinden yakalanan değerler |
 | `queryParameters` | `Record<string, string>` | Ayrıştırılmış query string değerleri |
 | `childrenPath` | `string \| undefined` | `/**` eşleşmesinden sonraki kalan yol; child router'a `initialPath` olarak verilir |
+| `parentPath` | `string \| undefined` | `/**` öncesindeki eşleşen önek; child router'a `parentPath` olarak verilerek `navigate` ve `replace` doğru tarayıcı URL'si üretir |
 
 ---
 

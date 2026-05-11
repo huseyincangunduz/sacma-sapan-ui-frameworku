@@ -460,7 +460,7 @@ router.destroy();               // remove popstate listener
 
 #### Child routing
 
-To nest routes under a parent component, end the parent's path with `/**`. The router strips the matched prefix and passes the remainder as `childrenPath` in `UrlParameters`. The parent component then creates its own `Router` with that path and renders an `<Outlet>`.
+To nest routes under a parent component, end the parent's path with `/**`. The router strips the matched prefix and passes the remainder as `childrenPath` and the matched prefix as `parentPath` in `UrlParameters`. The parent component passes both to its child `Router`: `childrenPath` becomes the initial path, and `parentPath` is used to prefix browser URLs on navigation so the address bar always shows the full path.
 
 ```tsx
 import { NeolitComponent, NeolitNode } from "@ubs-platform/neolit/core";
@@ -472,6 +472,7 @@ class Dashboard extends NeolitComponent<UrlParameters> {
     onInit(): void {
         this.childRouter = new Router({
             initialPath: this.properties.childrenPath,
+            parentPath: this.properties.parentPath,
             routeMap: new RouteMap([
                 {
                     path: "overview",
@@ -488,7 +489,11 @@ class Dashboard extends NeolitComponent<UrlParameters> {
     render(): NeolitNode {
         return (
             <>
-                <nav>...</nav>
+                <nav>
+                    {/* navigate uses relative paths; the Router prefixes the browser URL automatically */}
+                    <button onclick={() => this.childRouter.navigate("overview")}>Overview</button>
+                    <button onclick={() => this.childRouter.navigate("settings")}>Settings</button>
+                </nav>
                 <Outlet router={this.childRouter} />
             </>
         );
@@ -527,6 +532,7 @@ import { Outlet } from "@ubs-platform/neolit/routing";
 | `pathParameters` | `Record<string, string>` | Values captured from `:param` segments |
 | `queryParameters` | `Record<string, string>` | Parsed query string values |
 | `childrenPath` | `string \| undefined` | Remaining path after a `/**` match; pass as `initialPath` to a child router |
+| `parentPath` | `string \| undefined` | Matched path prefix before `/**`; pass as `parentPath` to the child router so `navigate` and `replace` produce correct browser URLs |
 
 ---
 

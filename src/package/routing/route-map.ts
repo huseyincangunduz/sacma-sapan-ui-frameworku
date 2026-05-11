@@ -4,7 +4,7 @@ export interface UrlParameters {
     queryParameters: Record<string, string>;
     pathParameters: Record<string, string>;
     childrenPath?: string;
-
+    parentPath?: string;
 }
 
 export interface PathSegment {
@@ -118,7 +118,8 @@ export class RouteMap {
         return {
             queryParameters: { ...parameters.queryParameters },
             pathParameters: { ...parameters.pathParameters },
-            childrenPath: parameters.childrenPath
+            childrenPath: parameters.childrenPath,
+            parentPath: parameters.parentPath
         };
     }
 
@@ -178,11 +179,11 @@ export class RouteMap {
         const remainingSegments = incomingPathSegments.slice((route.pathSegments.length - (hasWildcard ? 1 : 0)));
         if (remainingSegments.length === 0 || hasWildcard) {
             if (!hasWildcard) {
-                // 
                 delete nextParameters.childrenPath;
-
+                delete nextParameters.parentPath;
             } else {
-                nextParameters.childrenPath = remainingSegments.join("/")
+                nextParameters.childrenPath = remainingSegments.join("/");
+                nextParameters.parentPath = "/" + incomingPathSegments.slice(0, route.pathSegments.length - 1).join("/");
             }
 
             return nextParameters;

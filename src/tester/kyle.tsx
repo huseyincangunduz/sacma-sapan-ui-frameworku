@@ -25,7 +25,8 @@ export class KyleBroflovski extends NeolitComponent<UrlParameters> {
 
   onInit(): void {
     this.router = new Router({
-      initialPath: this.properties.childrenPath!,
+      initialPath: this.properties.childrenPath ?? "",
+      parentPath: this.properties.parentPath,
       routeMap: new RouteMap([
         {
           path: "",
