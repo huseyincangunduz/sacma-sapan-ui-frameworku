@@ -24,19 +24,19 @@ export const routeMap = new RouteMap([
     },
   },
   {
-    path: "/lotus-books",
-    componentFactory: () => {
-      return <KyleBroflovski />;
+    path: "/lotus-books/**",
+    componentFactory: (props) => {
+      return <KyleBroflovski {...props} />;
     },
-    async canActivate() {
-      // Kyle'landın
-      return Math.random() > 0.5
-        ? (() => {
-            alert("Kylelandın");
-            return true;
-          })()
-        : "/";
-    },
+    // async canActivate() {
+    //   // Kyle'landın
+    //   return Math.random() > 0.5
+    //     ? (() => {
+    //         alert("Kylelandın");
+    //         return true;
+    //       })()
+    //     : "/";
+    // },
   },
 ]);
 
