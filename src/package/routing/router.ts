@@ -16,9 +16,9 @@ export class Router {
 
     constructor({ routeMap, initialPath, parentPath }: RouterOptions) {
         this.routeMap = routeMap;
-        this.parentPath = parentPath ?? "";
+        this.parentPath = parentPath ? this.regularizePath(parentPath) : "";
 
-        const resolvedInitialPath = initialPath ?? this.getCurrentBrowserPath();
+        const resolvedInitialPath = initialPath ? this.regularizePath(initialPath) : this.getCurrentBrowserPath();
         this.pathState = state(resolvedInitialPath);
 
         this.popStateHandler = () => {
@@ -32,7 +32,9 @@ export class Router {
     }
 
     private async activatedRouteWork(resolvedInitialPath: string) {
-        this.activeRouteState.setAsync(this.routeMap.getComponentForRoute(resolvedInitialPath));
+        this.getComponentForRoute(resolvedInitialPath);
+
+        // this.activeRouteState.setAsync(this.routeMap.getComponentForRoute(resolvedInitialPath));
     }
 
     navigate(path: string): void {
@@ -47,19 +49,35 @@ export class Router {
 
     async sync(path: string): Promise<void> {
         this.pathState.set(path);
-        this.activeRouteState.setAsync(this.routeMap.getComponentForRoute(path));
+        this.getComponentForRoute(path);
+    }
+
+    private getComponentForRoute(path: string) {
+        // skip parent path if exists, because parent router will handle it
+        const resolvedPathWithoutQuery = this.parentPath && path.startsWith(this.parentPath)
+            ? path.slice(this.parentPath.length) || "/"
+            : path;
+        this.activeRouteState.setAsync(this.routeMap.getComponentForRoute(resolvedPathWithoutQuery));
     }
 
     destroy(): void {
         window.removeEventListener("popstate", this.popStateHandler);
     }
 
+    regularizePath(...path: string[]): string {
+        if (!this.parentPath) return path.join("/");
+        let regularized = path.join("/").split("/").filter(Boolean).join("/");
+        if (regularized) regularized = `/${regularized}`;
+        return regularized;
+    }
+
     private resolveBrowserPath(path: string): string {
-        if (!this.parentPath) return path;
-        return `${this.parentPath}/${path}`;
+        if (!this.parentPath) return this.regularizePath(path);
+        return this.regularizePath(this.parentPath, path);
     }
 
     private resolveLocalPath(fullPath: string): string {
+        fullPath = this.regularizePath(fullPath);
         if (!this.parentPath) return fullPath;
         const [pathPart, queryPart] = fullPath.split("?");
         if (pathPart.startsWith(this.parentPath)) {
@@ -70,6 +88,6 @@ export class Router {
     }
 
     private getCurrentBrowserPath(): string {
-        return window.location.pathname + window.location.search;
+        return this.regularizePath(window.location.pathname + window.location.search);
     }
 }

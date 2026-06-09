@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Introduction } from "./landing/introduction";
 import { SampleListPage } from "./landing/samples";
 import {
@@ -53,3 +54,8 @@ provideValue(
   "https://github.com/huseyincangunduz/sacma-sapan-ui-frameworku",
   appContextInjector,
 );
+rootInjector.registerValue("app-axios-instance", axios.create({
+    baseURL: "",
+    timeout: 1000,
+}));
+

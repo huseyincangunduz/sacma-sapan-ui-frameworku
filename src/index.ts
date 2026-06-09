@@ -1,15 +1,6 @@
-import { Introduction } from "./landing/introduction";
 
-import { InjectHolder, Injectable, createInjector, inject, rootInjector } from "@ubs-platform/neolit/injectables";
-import { BookList } from "./lotus-app/components/book-list";
-import axios from "axios";
-import { RouteMap } from "./package/routing/route-map";
 import { App } from "./app";
 
-rootInjector.registerValue("app-axios-instance", axios.create({
-    baseURL: "",
-    timeout: 1000,
-}));
 
 // Bootstrap
 
