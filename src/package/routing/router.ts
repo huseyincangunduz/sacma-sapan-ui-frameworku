@@ -7,6 +7,11 @@ export interface RouterOptions {
     parentPath?: string;
 }
 
+export interface NavigationOptions {
+    // Undefined ya da true ise, navigasyon sonrası sayfa en üste kaydırılır. false ise mevcut scroll pozisyonu korunur.
+    scrollToTop?: boolean;
+}
+
 export class Router {
     readonly routeMap: RouteMap;
     readonly pathState: State<string>;
@@ -37,14 +42,20 @@ export class Router {
         // this.activeRouteState.setAsync(this.routeMap.getComponentForRoute(resolvedInitialPath));
     }
 
-    navigate(path: string): void {
+    navigate(path: string, options?: NavigationOptions): void {
         window.history.pushState({}, "", this.resolveBrowserPath(path));
         this.sync(path);
+        if (options?.scrollToTop !== false) {
+            window.scrollTo(0, 0);
+        }
     }
 
-    replace(path: string): void {
+    replace(path: string, options?: NavigationOptions): void {
         window.history.replaceState({}, "", this.resolveBrowserPath(path));
         this.sync(path);
+        if (options?.scrollToTop !== false) {
+            window.scrollTo(0, 0);
+        } 
     }
 
     async sync(path: string): Promise<void> {
