@@ -16,7 +16,7 @@ export class State<DATA> {
 
   constructor(initialData: DATA, defaultOptions?: StateOptions) {
     this.data = initialData;
-    this.defaultOptions = defaultOptions || {notifyIncomingWhenSetState: true, subscribeIncomingWhenSetState: true};
+    this.defaultOptions = defaultOptions || { notifyIncomingWhenSetState: true, subscribeIncomingWhenSetState: true };
   }
 
   get(): DATA {
@@ -164,6 +164,8 @@ export class State<DATA> {
 
 export class ComputedState<DATA> extends State<DATA> {
   private computeFn: (stateValues: any[]) => DATA;
+  public computeAfterMiliseconds = 2;
+  public computeTimeout: any = null;
 
   constructor(
     private statesListened: StateOrPlain<any>[],
@@ -175,9 +177,18 @@ export class ComputedState<DATA> extends State<DATA> {
       ),
     );
     this.computeFn = computeFn;
+
     for (const stateOrPlain of statesListened) {
       if (stateOrPlain instanceof State) {
-        stateOrPlain.subscribe(() => this.recompute());
+        stateOrPlain.subscribe(() => {
+          if (!this.computeTimeout) {
+            this.computeTimeout = setTimeout(() => {
+              clearTimeout(this.computeTimeout);
+              this.computeTimeout = null;
+              this.recompute()
+            }, this.computeAfterMiliseconds);
+          }
+        });
       }
     }
   }
