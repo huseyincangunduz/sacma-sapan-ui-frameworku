@@ -18,6 +18,9 @@ export class Forv2<T> extends NeolitComponent<ForProperties<T>> {
   /** Key → the item value used to render the cached node */
   itemSnapshotByKey = new Map<string | number, T>();
 
+  private nodeKeyByDom = new WeakMap<NeolitNode, string | number>();
+  private orderedKeys: Array<string | number> = [];
+
   onInit(): void {
     if (isState(this.properties.items)) {
       this.properties.items.subscribe(() => this.onArrayUpdate());
@@ -31,47 +34,69 @@ export class Forv2<T> extends NeolitComponent<ForProperties<T>> {
     return this.properties.keyFn ? this.properties.keyFn(item, index) : index;
   }
 
+  private reorderManagedNodes(orderedNodes: NeolitNode[]): void {
+    const mountTarget = this.getMountTarget();
+    if (!mountTarget) {
+      return;
+    }
+
+    Array.from(mountTarget.childNodes).forEach((child) => {
+      if (
+        (child instanceof HTMLElement || child instanceof Text) &&
+        this.nodeKeyByDom.has(child as NeolitNode)
+      ) {
+        mountTarget.removeChild(child);
+      }
+    });
+
+    orderedNodes.forEach((node) => {
+      mountTarget.appendChild(node);
+    });
+  }
+
   onArrayUpdate(): void {
     const items = getStateValue(this.properties.items) ?? [];
-    let structureChanged = false;
+    const nextNodeMap = new Map<string | number, NeolitNode>();
+    const nextSnapshotMap = new Map<string | number, T>();
+    const nextOrderedKeys: Array<string | number> = [];
 
-    // --- Upsert pass ---
     for (let index = 0; index < items.length; index++) {
       const item = items[index];
       const key = this.genKey(item, index);
+      nextOrderedKeys.push(key);
 
-      if (!this.itemDomMapByKey.has(key)) {
-        // Yeni item: DOM node oluştur ve cache'e al.
-        const node = this.properties.children(item, index);
-        this.itemDomMapByKey.set(key, node);
-        this.itemSnapshotByKey.set(key, item);
-        structureChanged = true;
+      const existingNode = this.itemDomMapByKey.get(key);
+      const node = existingNode ?? this.properties.children(item, index);
+
+      if (!existingNode) {
+        this.nodeKeyByDom.set(node, key);
       }
-      // Var olan item: children fonksiyonu zaten reaktif state'e bağlıysa
-      // yeniden render etmeye gerek yok. Bağlı değilse snapshot'ı kontrol et.
+
+      nextNodeMap.set(key, node);
+      nextSnapshotMap.set(key, item);
     }
 
-    // --- Prune pass: listeden çıkarılan itemları temizle ---
-    const activeKeys = new Set(
-      items.map((item, index) => this.genKey(item, index)),
-    );
-
-    for (const key of this.itemDomMapByKey.keys()) {
-      if (!activeKeys.has(key)) {
-        const node = this.itemDomMapByKey.get(key);
-        node?.remove();
-        this.itemDomMapByKey.delete(key);
-        this.itemSnapshotByKey.delete(key);
-        structureChanged = true;
+    for (const [key, node] of this.itemDomMapByKey.entries()) {
+      if (!nextNodeMap.has(key)) {
+        this.nodeKeyByDom.delete(node);
+        node.remove();
       }
     }
 
-    if (structureChanged) {
-      this.rerender();
-    }
+    this.itemDomMapByKey = nextNodeMap;
+    this.itemSnapshotByKey = nextSnapshotMap;
+    this.orderedKeys = nextOrderedKeys;
+
+    const orderedNodes = nextOrderedKeys
+      .map((key) => this.itemDomMapByKey.get(key))
+      .filter((node): node is NeolitNode => Boolean(node));
+
+    this.reorderManagedNodes(orderedNodes);
   }
 
   render(): NeolitNode[] {
-    return Array.from(this.itemDomMapByKey.values());
+    return this.orderedKeys
+      .map((key) => this.itemDomMapByKey.get(key))
+      .filter((node): node is NeolitNode => Boolean(node));
   }
 }

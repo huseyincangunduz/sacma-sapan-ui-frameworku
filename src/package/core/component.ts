@@ -24,6 +24,14 @@ export abstract class NeolitComponent<PROPERTIES = Record<string, any>> {
     NeolitComponent.componentInstances.set(this.key, this);
   }
 
+  getMountTarget(): HTMLElement | null {
+    return this._mountTarget;
+  }
+
+  getCurrentElement(): NeolitNode[] {
+    return this._currentElement;
+  }
+
   assignProperties(): void {
     // if (this.initialProperties) {
     //     this.properties = this.initialProperties;
