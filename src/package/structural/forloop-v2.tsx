@@ -50,7 +50,17 @@ export class Forv2<T> extends NeolitComponent<ForProperties<T>> {
     });
 
     orderedNodes.forEach((node) => {
-      mountTarget.appendChild(node);
+      if (node instanceof Array) {
+        throw new Error("Array of nodes is not supported. Please wrap the nodes in a NeolitComponent.");
+      } else if (node instanceof NeolitComponent) {
+        node.getCurrentElement().forEach((child) => {
+          mountTarget.appendChild(child);
+        });
+
+      } else {
+        mountTarget.appendChild(node);
+      }
+      
     });
   }
 
