@@ -8,6 +8,7 @@ import {
 import { ForProperties } from "./forloop";
 
 export class Forv2<T> extends NeolitComponent<ForProperties<T>> {
+  pivotNode?: Comment;
   public properties = {
     items: state<T[]>([]),
   } as ForProperties<T>;
@@ -22,6 +23,7 @@ export class Forv2<T> extends NeolitComponent<ForProperties<T>> {
   private orderedKeys: Array<string | number> = [];
 
   onInit(): void {
+    this.pivotNode = document.createComment("for-loop-v2-pivot - eğer yanlışıkla silerseniz projeniz anında lanetlenecektir.");
     if (isState(this.properties.items)) {
       this.properties.items.subscribe(() => this.onArrayUpdate());
     }
@@ -48,17 +50,23 @@ export class Forv2<T> extends NeolitComponent<ForProperties<T>> {
         mountTarget.removeChild(child);
       }
     });
+    if (this.pivotNode) {
+      mountTarget.appendChild(this.pivotNode);
+    }
 
     orderedNodes.forEach((node) => {
       if (node instanceof Array) {
         throw new Error("Array of nodes is not supported. Please wrap the nodes in a NeolitComponent.");
       } else if (node instanceof NeolitComponent) {
         node.getCurrentElement().forEach((child) => {
-          mountTarget.appendChild(child);
+          // mountTarget.appendChild(child);
+          this.pivotNode?.parentNode?.insertBefore(child, this.pivotNode);
         });
 
       } else {
-        mountTarget.appendChild(node);
+        // mountTarget.appendChild(node);
+        this.pivotNode?.parentNode?.insertBefore(node, this.pivotNode);
+
       }
       
     });
