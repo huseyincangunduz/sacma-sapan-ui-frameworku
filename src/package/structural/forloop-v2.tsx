@@ -4,6 +4,7 @@ import {
   NeolitComponent,
   NeolitNode,
   state,
+  State,
 } from "../core";
 import { ForProperties } from "./forloop";
 
@@ -17,6 +18,12 @@ export class Forv2<T> extends NeolitComponent<ForProperties<T>> {
 
   /** Key → the item value used to render the cached node */
   itemSnapshotByKey = new Map<string | number, T>();
+
+  /** Key → item State abonelikleri (item bir State ise) */
+  private itemStateListeners = new Map<
+    string | number,
+    { state: State<any>; listener: () => void }
+  >();
 
   private nodeKeyByDom = new WeakMap<NeolitNode, string | number>();
   private orderedKeys: Array<string | number> = [];
@@ -44,52 +51,70 @@ export class Forv2<T> extends NeolitComponent<ForProperties<T>> {
       this.properties.items.unsubscribe(this.itemsListener);
       this.itemsListener = undefined;
     }
+    for (const key of [...this.itemStateListeners.keys()]) {
+      this.unwatchItemState(key);
+    }
     super.destroy();
+  }
+
+  private watchItemState(key: string | number, item: T): void {
+    if (!isState(item)) return;
+    const existing = this.itemStateListeners.get(key);
+    if (existing?.state === item) return;
+    this.unwatchItemState(key);
+    const listener = () => this.rerenderItem(key);
+    (item as State<any>).subscribe(listener);
+    this.itemStateListeners.set(key, { state: item as State<any>, listener });
+  }
+
+  private unwatchItemState(key: string | number): void {
+    const entry = this.itemStateListeners.get(key);
+    if (!entry) return;
+    entry.state.unsubscribe(entry.listener);
+    this.itemStateListeners.delete(key);
+  }
+
+  /** İtem State'i güncellendiğinde sadece o satırı yeniden çiziyoruz. */
+  private rerenderItem(key: string | number): void {
+    const oldNode = this.itemDomMapByKey.get(key);
+    const index = this.itemIndexByKey.get(key);
+    const item = this.itemSnapshotByKey.get(key);
+    if (!oldNode || index === undefined || item === undefined) return;
+
+    this.nodeKeyByDom.delete(oldNode);
+    const node = this.properties.children(item, index);
+    this.nodeKeyByDom.set(node, key);
+    this.itemDomMapByKey.set(key, node);
+
+    const mountTarget = this.getMountTarget();
+    if (mountTarget && oldNode.parentNode === mountTarget) {
+      mountTarget.replaceChild(node, oldNode);
+    } else {
+      oldNode.remove();
+      this.reorderManagedNodes(this.getOrderedNodes());
+    }
   }
 
   private genKey(item: T, index: number): string | number {
     return this.properties.keyFn ? this.properties.keyFn(item, index) : index;
   }
 
-  // Item'lar yerinde mutasyona uğrayabildiği için karşılaştırma amaçlı sığ bir kopya saklıyoruz.
-  private snapshotItem(item: T): T {
-    if (item && typeof item === "object") {
-      return (
-        Array.isArray(item) ? [...(item as any[])] : { ...(item as any) }
-      ) as T;
-    }
-    return item;
-  }
-
   private isItemChanged(
     nextItem: T,
-    previousSnapshot: T | undefined,
+    previousItem: T | undefined,
     index: number,
   ): boolean {
-    if (previousSnapshot === undefined) {
+    if (previousItem === undefined) {
       return true;
     }
 
     if (this.properties.compareItems) {
-      return !this.properties.compareItems(nextItem, previousSnapshot, index);
+      return !this.properties.compareItems(nextItem, previousItem, index);
     }
 
-    if (
-      nextItem &&
-      previousSnapshot &&
-      typeof nextItem === "object" &&
-      typeof previousSnapshot === "object"
-    ) {
-      const next = nextItem as Record<string, unknown>;
-      const previous = previousSnapshot as Record<string, unknown>;
-      const nextKeys = Object.keys(next);
-      if (nextKeys.length !== Object.keys(previous).length) {
-        return true;
-      }
-      return nextKeys.some((key) => !Object.is(next[key], previous[key]));
-    }
-
-    return !Object.is(nextItem, previousSnapshot);
+    // Objelerin içine bakmıyoruz: referans aynıysa değişmemiş sayılır.
+    // İçerik reaktifliği için item'ı State olarak verin, aboneliği biz kuruyoruz.
+    return !Object.is(nextItem, previousItem);
   }
 
   private reorderManagedNodes(orderedNodes: NeolitNode[]): void {
@@ -141,14 +166,17 @@ export class Forv2<T> extends NeolitComponent<ForProperties<T>> {
         this.nodeKeyByDom.set(node, key);
       }
 
+      this.watchItemState(key, item);
+
       nextNodeMap.set(key, node);
-      nextSnapshotMap.set(key, this.snapshotItem(item));
+      nextSnapshotMap.set(key, item);
       nextIndexMap.set(key, index);
     }
 
     for (const [key, node] of this.itemDomMapByKey.entries()) {
       if (!nextNodeMap.has(key)) {
         this.nodeKeyByDom.delete(node);
+        this.unwatchItemState(key);
         node.remove();
       }
     }
